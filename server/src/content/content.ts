@@ -16,6 +16,18 @@ export const FRACTION_HINTS = [
 export const FRACTION_EXPLANATION =
   "1/2 + 1/4 + 1/4 = 1 whole. Two quarters make one half, and a half plus a half makes the whole. The 1/3 and 1/6 pieces are not needed for this target.";
 
+export interface FractionPuzzle { id: string; title: string; targetLabel: string; target: number; pieces: Record<string, { label: string; value: number }>; hints: string[]; explanation: string }
+export const FRACTION_PUZZLES: FractionPuzzle[] = [
+  { id: "whole", title: "Make 1 Whole", targetLabel: "1", target: 1, pieces: FRACTION_PIECES, hints: FRACTION_HINTS, explanation: FRACTION_EXPLANATION },
+  { id: "two-thirds", title: "Make 2/3", targetLabel: "2/3", target: 2 / 3,
+    pieces: { q1: { label: "1/3", value: 1 / 3 }, q2: { label: "1/3", value: 1 / 3 }, q3: { label: "1/2", value: 1 / 2 }, q4: { label: "1/6", value: 1 / 6 }, q5: { label: "1/4", value: 1 / 4 } },
+    hints: [
+      "The target is 2/3 — less than a whole. Which pieces are thirds?",
+      "Two equal thirds make 2/3. Do you have two pieces of the same size?",
+      "1/3 + 1/3 = 2/3. Another way: 1/2 + 1/6 also makes 2/3 — check: 3/6 + 1/6 = 4/6 = 2/3.",
+    ],
+    explanation: "1/3 + 1/3 = 2/3. Another correct solution is 1/2 + 1/6 = 3/6 + 1/6 = 4/6 = 2/3. The 1/4 piece does not fit this target." },
+];
 export const ATOMS: Record<string, { label: string; element: string; correctSlot: string }> = {
   oxygen: { label: "O — Oxygen", element: "O", correctSlot: "center" },
   hydrogen1: { label: "H — Hydrogen 1", element: "H", correctSlot: "left" },

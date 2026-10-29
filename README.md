@@ -45,6 +45,7 @@ npm test        # server puzzle-validation unit tests (vitest)
 | 8 | Session chat + quick messages (sanitized, length- and rate-limited), team points, badges, session summary |
 | 9 | Optional server AI hints (`AI_API_KEY/AI_API_URL/AI_MODEL`); predefined reviewed hints always work, failure = fallback |
 | 10 | Builds + unit tests verified, multi-client test, this README, `.env.example`, `LICENSES.md` |
+| 12 | Second Fraction Forge puzzle ("Make 2/3", teacher-rotated via ⏭️, each puzzle scores once, replay-after-reset never re-scores), guided heritage route (numbered markers + ground path discs in discovery order), teacher session-recap export (.txt download generated from live state) |
 | 11 | CO₂ second science level (independently validated/scored), session timer in HUD/summary/teacher view, camera-relative WASD + rotation sync + smoothed (interpolated) remote avatars, auto-classified common-error metrics (fraction overshoot / wrong atom slot / wrong heritage answer) on the teacher dashboard |
 
 ## Architecture

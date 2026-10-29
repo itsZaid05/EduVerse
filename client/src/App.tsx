@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "colyseus.js";
 import { joinClass, snapshot, type Snap } from "./network/client";
 import World, { type Zone } from "./world/World";
-import { FRACTION_PIECES, HOTSPOTS, SOURCES, MOLECULES } from "./games/content";
+import { FRACTION_PIECES, FRACTION_PUZZLES, HOTSPOTS, SOURCES, MOLECULES } from "./games/content";
 
 type Feedback = { text: string; kind: string };
 
@@ -86,7 +86,6 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
     else if (snap.activity === "summary") setShowSummary(true);
   }, [snap.activity]); // eslint-disable-line
 
-  const fracSum = snap.mathPlaced.reduce((s: number, id: string) => s + (FRACTION_PIECES.find((p) => p.id === id)?.value || 0), 0);
   const allDone = snap.mathComplete && snap.scienceComplete && snap.heritageFound.length >= 3;
   const hs = HOTSPOTS.find((h) => h.id === hotspot);
 
@@ -111,13 +110,14 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
 
         {zone === "campus" && <div><h2>Welcome! 🎉</h2><p>Walk to a portal or tap one above: <b>Math Lab</b> (Fraction Forge), <b>Science Lab</b> (Molecule Builder), or <b>Heritage Explorer</b> (Qutb Minar).</p><p>👥 In this session: {snap.players.filter(p=>p.connected).map((p) => p.nickname).join(", ") || "…"}</p></div>}
 
-        {zone === "math" && <div>
-          <h2>➗ Fraction Forge</h2><p><b>Mission:</b> fill the whole bar to exactly <b>1</b>. Pieces: 1/2, 1/4, 1/4, 1/3, 1/6. Moves that pass 1 are rejected by the server.</p>
-          <div className="bar"><div style={{ width: `${Math.min(100, fracSum * 100)}%` }} /> </div>
-          <p>Total: <b>{fracSum.toFixed(2)} / 1</b> · Attempts: {snap.mathAttempts} {snap.mathComplete && "· ✅ Complete (+100)"}</p>
-          <div className="btnrow">{FRACTION_PIECES.map((p) => <button key={p.id} disabled={snap.mathPlaced.includes(p.id)} onClick={() => room.send("placeFraction", { pieceId: p.id })} style={{ borderColor: p.color }}>{p.label}{snap.mathPlaced.includes(p.id) ? " ✓" : ""}</button>)}</div>
+        {zone === "math" && (() => { const pz = FRACTION_PUZZLES.find((x) => x.id === snap.mathPuzzle) || FRACTION_PUZZLES[0]; const sum = snap.mathPlaced.reduce((t: number, id: string) => t + (pz.pieces.find((x) => x.id === id)?.value || 0), 0); return <div>
+          <h2>➗ Fraction Forge — {pz.title}</h2><p><b>Mission:</b> fill the bar to exactly <b>{pz.targetLabel}</b>. Moves that pass the target are rejected by the server. {snap.mathDone.length}/2 puzzles scored.</p>
+          <div className="bar"><div style={{ width: `${Math.min(100, (sum / pz.target) * 100)}%` }} /></div>
+          <p>Total: <b>{sum.toFixed(2)} / {pz.targetLabel}</b> · Attempts: {snap.mathAttempts} {snap.mathComplete && "· ✅ Complete"}</p>
+          <div className="btnrow">{pz.pieces.map((pc) => <button key={pc.id} disabled={snap.mathPlaced.includes(pc.id)} onClick={() => room.send("placeFraction", { pieceId: pc.id })} style={{ borderColor: pc.color }}>{pc.label}{snap.mathPlaced.includes(pc.id) ? " ✓" : ""}</button>)}</div>
           <div className="btnrow"><button onClick={() => room.send("hint", { zone: "math" })}>💡 Hint</button><button onClick={() => room.send("aiHint", { subject: "math", mistake: "fraction-sum" })}>🤖 Ask AI hint</button></div>
-        </div>}
+          <p className="fine">Puzzles scored: {FRACTION_PUZZLES.map((x) => `${snap.mathDone.includes(x.id) ? "✅" : "⬜"} ${x.title}`).join(" · ")}</p>
+        </div>; })()}
 
         {zone === "science" && (() => { const lvl = (snap.scienceLevel === "co2" ? "co2" : "h2o") as "h2o" | "co2"; const mol = MOLECULES[lvl]; const placed = lvl === "co2" ? snap.science2Placed : snap.sciencePlaced; const done = lvl === "co2" ? snap.science2Complete : snap.scienceComplete; const att = lvl === "co2" ? snap.science2Attempts : snap.scienceAttempts; return <div>
           <h2>🔬 Molecule Builder</h2>
@@ -162,6 +162,28 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
   );
 }
 
+function downloadRecap(snap: Snap) {
+  const elapsed = snap.elapsedStart ? Math.floor((Date.now() - snap.elapsedStart) / 1000) : 0;
+  const students = snap.players.filter((x: any) => x.role === "student");
+  const lines = [
+    "EduVerse — Session Recap", "========================",
+    `Class code: ${snap.code}`, `Duration: ${Math.floor(elapsed / 60)}m ${elapsed % 60}s`, `Team score: ${snap.teamScore}`, "",
+    "Students:",
+    ...students.map((x: any) => `- ${x.nickname} | zone: ${x.zone} | score: ${x.score} | attempts: ${x.attempts} | discoveries: ${x.discoveries ? x.discoveries.split(",").length : 0}/3 | ${x.connected ? "online" : "offline"}`),
+    "", "Activities:",
+    `Fraction Forge puzzles scored: ${snap.mathDone.join(", ") || "none"} (attempts ${snap.mathAttempts})`,
+    `Molecule Builder H2O: ${snap.scienceComplete ? "complete" : "not complete"} (attempts ${snap.scienceAttempts})`,
+    `Molecule Builder CO2: ${snap.science2Complete ? "complete" : "not complete"} (attempts ${snap.science2Attempts})`,
+    `Heritage discoveries: ${snap.heritageFound.join(", ") || "none"} (attempts ${snap.heritageAttempts})`,
+    "", "Common errors:",
+    `Fraction overshoot past target: ${snap.mathTooBig}`, `Atom wrong/filled slot: ${snap.scienceBadSlot}`, `Heritage wrong answers: ${snap.heritageWrong}`,
+    "", "Activity feed:", ...[...snap.feed].reverse(),
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `eduverse-recap-${snap.code}.txt`; a.click(); URL.revokeObjectURL(a.href);
+}
+
 function Teacher({ room, snap, feedback, conn }: { room: Room; snap: Snap; feedback: Feedback[]; conn: string }) {
   const [ann, setAnn] = useState("");
   const cmd = (action: string, extra: any = {}) => room.send("teacher", { action, ...extra });
@@ -182,9 +204,10 @@ function Teacher({ room, snap, feedback, conn }: { room: Room; snap: Snap; feedb
         <section><h2>🎛️ Controls (server-validated)</h2>
           <div className="btnrow">{[["lobby","🏫 Send class to Campus"],["math","➗ Start Math"],["science","🔬 Start Science"],["heritage","🏛️ Start Heritage"],["summary","🏁 End → Summary"]].map(([a,l]) => <button key={a} onClick={() => cmd("setActivity", { activity: a })}>{l}</button>)}</div>
           <div className="btnrow"><button onClick={() => cmd("broadcastHint")}>💡 Broadcast hint</button>
-          <button onClick={() => cmd("resetMath")}>↺ Reset Math</button><button onClick={() => cmd("resetScience")}>↺ Reset Science</button><button onClick={() => cmd("resetHeritage")}>↺ Reset Heritage</button></div>
+          <button onClick={() => cmd("nextMathPuzzle")}>⏭️ Next math puzzle</button><button onClick={() => cmd("resetMath")}>↺ Reset Math</button><button onClick={() => cmd("resetScience")}>↺ Reset Science</button><button onClick={() => cmd("resetHeritage")}>↺ Reset Heritage</button></div>
           <form onSubmit={(e) => { e.preventDefault(); cmd("announce", { text: ann }); setAnn(""); }}>
             <input value={ann} onChange={(e) => setAnn(e.target.value)} maxLength={140} placeholder="Announcement to whole class" /><button className="primary">📣 Send</button></form>
+          <button className="primary" onClick={() => downloadRecap(snap)}>⬇️ Download session recap (.txt)</button>
           <h3>📰 Activity feed</h3><div className="feed">{[...snap.feed].reverse().map((f, i) => <p key={i}>{f}</p>)}</div>
         </section>
       </div>

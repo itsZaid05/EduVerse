@@ -22,6 +22,8 @@ export class ClassState extends Schema {
   @type("number") mathAttempts = 0;
   @type("boolean") mathComplete = false;
   @type("number") mathHint = 0;
+  @type("string") mathPuzzle = "whole"; // current FractionPuzzle id
+  @type("string") mathDone = ""; // csv of completed puzzle ids (scored once each)
   // Science
   @type("string") sciencePlaced = ""; // csv atomId=slotId
   @type("number") scienceAttempts = 0;

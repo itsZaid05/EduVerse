@@ -36,7 +36,7 @@ export function snapshot(state: any) {
   }));
   return {
     code: state.code, activity: state.activity, teamScore: state.teamScore, announcement: state.announcement,
-    mathPlaced: state.mathPlaced ? state.mathPlaced.split(",") : [], mathAttempts: state.mathAttempts, mathComplete: state.mathComplete,
+    mathPlaced: state.mathPlaced ? state.mathPlaced.split(",").filter(Boolean) : [], mathAttempts: state.mathAttempts, mathComplete: state.mathComplete, mathPuzzle: state.mathPuzzle || "whole", mathDone: state.mathDone ? state.mathDone.split(",").filter(Boolean) : [],
     sciencePlaced: state.sciencePlaced ? Object.fromEntries(state.sciencePlaced.split(",").map((s: string) => s.split("="))) : {}, scienceAttempts: state.scienceAttempts, scienceComplete: state.scienceComplete, elapsedStart: state.elapsedStart,
     scienceLevel: state.scienceLevel || "h2o", science2Placed: state.science2Placed ? Object.fromEntries(state.science2Placed.split(",").filter(Boolean).map((s: string) => s.split("="))) : {}, science2Attempts: state.science2Attempts || 0, science2Complete: !!state.science2Complete,
     mathTooBig: state.mathTooBig || 0, scienceBadSlot: state.scienceBadSlot || 0, heritageWrong: state.heritageWrong || 0,

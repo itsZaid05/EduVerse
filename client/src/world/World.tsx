@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import type { Room } from "colyseus.js";
 import type { Snap } from "../network/client";
-import { FRACTION_PIECES, HOTSPOTS } from "../games/content";
+import { FRACTION_PIECES, FRACTION_PUZZLES, HOTSPOTS } from "../games/content";
 
 export type Zone = "campus" | "math" | "science" | "heritage";
 const COLORS = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5"];
@@ -58,8 +58,6 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
 
   const remotes = snap.players.filter((p) => p.id !== room.sessionId && p.zone === zone && p.connected);
   useEffect(() => { remotes.forEach((p) => remoteTarget.current.set(p.id, { x: p.x, z: p.z })); });
-  const placedFrac = FRACTION_PIECES.filter((p) => snap.mathPlaced.includes(p.id));
-  let fracX = -4;
 
   return (
     <a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true" style={{ width: "100%", height: "100%" }}>
@@ -100,22 +98,21 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
         </a-entity>
       )}
 
-      {zone === "math" && (
+      {zone === "math" && (() => { const pz = FRACTION_PUZZLES.find((x) => x.id === snap.mathPuzzle) || FRACTION_PUZZLES[0]; const placedPz = pz.pieces.filter((pc) => snap.mathPlaced.includes(pc.id)); let fx = -4; return (
         <a-entity>
           <a-plane rotation="-90 0 0" width="40" height="40" color="#dbeafe" />
           <a-box position="0 1 -8" width="12" height="4" depth="0.4" color="#14324a" />
-          <a-text value="FRACTION FORGE — Make 1 whole!" align="center" position="0 2.6 -7.7" color="#fff" scale="1.6 1.6 1.6" />
+          <a-text value={`FRACTION FORGE — ${pz.title}!`} align="center" position="0 2.6 -7.7" color="#fff" scale="1.6 1.6 1.6" />
           <a-box position="0 0.5 -4" width="9" height="0.3" depth="0.3" color="#333" />
-          {placedFrac.map((p) => { const w = p.value * 8; const x = fracX + w / 2; fracX += w; return <a-box key={p.id} position={`${x} 1.1 -4`} width={w - 0.06} height="0.9" depth="0.5" color={p.color} />; })}
-          {FRACTION_PIECES.map((p, i) => (
-            <a-entity key={p.id} position={`${-6 + i * 3} 0 -1`}>
-              <a-box class="clickable" width="1.6" height="1" depth="0.6" color={snap.mathPlaced.includes(p.id) ? "#999" : p.color} position="0 1 0"
-                onClick={() => room.send("placeFraction", { pieceId: p.id })} />
-              <a-text value={p.label} align="center" position="0 1 0.35" color="#fff" scale="1.3 1.3 1.3" />
+          {placedPz.map((pc) => { const w = (pc.value / pz.target) * 8; const x = fx + w / 2; fx += w; return <a-box key={pc.id} position={`${x} 1.1 -4`} width={w - 0.06} height="0.9" depth="0.5" color={pc.color} />; })}
+          {pz.pieces.map((pc, i) => (
+            <a-entity key={pc.id} position={`${-6 + i * 3} 0 -1`}>
+              <a-box class="clickable" width="1.6" height="1" depth="0.6" color={snap.mathPlaced.includes(pc.id) ? "#999" : pc.color} position="0 1 0"
+                onClick={() => room.send("placeFraction", { pieceId: pc.id })} />
+              <a-text value={pc.label} align="center" position="0 1 0.35" color="#fff" scale="1.3 1.3 1.3" />
             </a-entity>
           ))}
-        </a-entity>
-      )}
+        </a-entity> ); })()}
 
       {zone === "science" && (() => { const co2 = snap.scienceLevel === "co2"; const placed = co2 ? snap.science2Placed : snap.sciencePlaced; const done = co2 ? snap.science2Complete : snap.scienceComplete; const filled = (slot: string) => Object.values(placed).includes(slot); return (
         <a-entity>
@@ -147,11 +144,12 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
             <a-box width="1.4" height="2.2" depth="1.1" color="#5b3a29" position="0 1.1 0" />
           </a-entity>
           <a-box position="0 1 -14" width="16" height="2" depth="2" color="#cbb593" />
-          {HOTSPOTS.map((h) => (
+          {(() => { const pts: [number, number][] = [[0, 8], ...HOTSPOTS.map((h) => [h.pos[0], h.pos[2]] as [number, number])]; const discs: [number, number][] = []; for (let i = 0; i < pts.length - 1; i++) { for (let t = 0.25; t < 1; t += 0.25) discs.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t]); } return discs.map(([x, z], i) => <a-circle key={i} rotation="-90 0 0" radius="0.28" color="#ffd60a" position={`${x} 0.03 ${z}`} />); })()}
+          {HOTSPOTS.map((h, hi) => (
             <a-entity key={h.id} position={`${h.pos[0]} 0 ${h.pos[2]}`}>
               <a-sphere class="clickable" radius="0.45" color={snap.heritageFound.includes(h.id) ? "#06d6a0" : "#ffd60a"} position="0 1.6 0" onClick={() => onHotspot(h.id)}
                 {...(snap.heritageFound.includes(h.id) ? {} : { animation: "property: position; to: 0 1.9 0; dir: alternate; loop: true; dur: 1200" })} />
-              <a-text value={snap.heritageFound.includes(h.id) ? `✓ ${h.title}` : h.title} align="center" position="0 2.3 0" color="#5b3a29" scale="1.1 1.1 1.1" />
+              <a-text value={snap.heritageFound.includes(h.id) ? `✓ ${hi + 1}. ${h.title}` : `${hi + 1}. ${h.title}`} align="center" position="0 2.3 0" color="#5b3a29" scale="1.1 1.1 1.1" />
             </a-entity>
           ))}
         </a-entity>

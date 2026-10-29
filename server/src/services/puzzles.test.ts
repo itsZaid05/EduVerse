@@ -16,6 +16,19 @@ describe("Fraction Forge validation (Phase 4)", () => {
     expect(validateFractionMove([], "nope").ok).toBe(false);
   });
 });
+describe("Fraction Forge puzzle 2 (Phase 12)", () => {
+  it("solves 1/3 + 1/3 = 2/3 and accepts 1/2 + 1/6", () => {
+    const r = validateFractionMove(["q1"], "q2", "two-thirds");
+    expect(r.ok).toBe(true); expect(r.complete).toBe(true);
+    expect(fractionSum(["q3", "q4"], "two-thirds")).toBeCloseTo(2 / 3);
+  });
+  it("rejects overshoot and pieces from the other puzzle", () => {
+    expect(validateFractionMove(["q3"], "q5", "two-thirds").ok).toBe(false); // 1/2+1/4 > 2/3
+    expect(validateFractionMove([], "p1", "two-thirds").ok).toBe(false); // whole-puzzle piece
+    expect(validateFractionMove([], "q1", "whole").ok).toBe(false); // and vice versa
+    expect(validateFractionMove([], "p1", "whole").ok).toBe(true); // puzzle 1 unchanged
+  });
+});
 describe("Molecule Builder validation (Phase 5)", () => {
   it("accepts only correct H2O slots and completes", () => {
     expect(validateAtomMove({}, "oxygen", "center").ok).toBe(true);

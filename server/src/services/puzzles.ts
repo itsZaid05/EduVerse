@@ -1,12 +1,15 @@
-import { FRACTION_PIECES, ATOMS, CO2_ATOMS, HERITAGE_HOTSPOTS } from "../content/content";
+import { FRACTION_PIECES, FRACTION_PUZZLES, ATOMS, CO2_ATOMS, HERITAGE_HOTSPOTS } from "../content/content";
 
 const EPS = 1e-9;
 
-/** Sum of placed fraction pieces; null if any piece id is unknown. */
-export function fractionSum(placed: string[]): number | null {
-  let s = 0;
+export function getPuzzle(puzzleId?: string) {
+  return FRACTION_PUZZLES.find((p) => p.id === puzzleId) || FRACTION_PUZZLES[0];
+}
+/** Sum of placed fraction pieces; null if any piece id is unknown in this puzzle. */
+export function fractionSum(placed: string[], puzzleId = "whole"): number | null {
+  const puzzle = getPuzzle(puzzleId); let s = 0;
   for (const id of placed) {
-    const p = FRACTION_PIECES[id];
+    const p = puzzle.pieces[id];
     if (!p) return null;
     s += p.value;
   }
@@ -14,13 +17,14 @@ export function fractionSum(placed: string[]): number | null {
 }
 export type MoveResult = { ok: boolean; reason: string; complete?: boolean };
 /** Server-authoritative validation for one Fraction Forge placement. */
-export function validateFractionMove(placed: string[], pieceId: string): MoveResult {
-  const piece = FRACTION_PIECES[pieceId];
-  if (!piece) return { ok: false, reason: "Unknown piece." };
+export function validateFractionMove(placed: string[], pieceId: string, puzzleId = "whole"): MoveResult {
+  const puzzle = getPuzzle(puzzleId);
+  const piece = puzzle.pieces[pieceId];
+  if (!piece) return { ok: false, reason: "Unknown piece for this puzzle." };
   if (placed.includes(pieceId)) return { ok: false, reason: "That piece is already placed." };
-  const sum = fractionSum(placed)! + piece.value;
-  if (sum > 1 + EPS) return { ok: false, reason: `Too big! ${piece.label} would push the total past 1 whole. Try a smaller piece.` };
-  return { ok: true, reason: sum >= 1 - EPS ? "You completed the whole!" : `Placed ${piece.label}. Keep going!`, complete: sum >= 1 - EPS };
+  const sum = fractionSum(placed, puzzleId)! + piece.value;
+  if (sum > puzzle.target + EPS) return { ok: false, reason: `Too big! ${piece.label} would push the total past ${puzzle.targetLabel}. Try a smaller piece.` };
+  return { ok: true, reason: sum >= puzzle.target - EPS ? `You made ${puzzle.targetLabel}!` : `Placed ${piece.label}. Keep going!`, complete: sum >= puzzle.target - EPS };
 }
 export type ScienceLevel = "h2o" | "co2";
 export const SCIENCE_LEVELS: ScienceLevel[] = ["h2o", "co2"];

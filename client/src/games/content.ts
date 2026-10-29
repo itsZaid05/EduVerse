@@ -6,6 +6,13 @@ export const FRACTION_PIECES = [
   { id: "p4", label: "1/3", value: 1 / 3, color: "#06d6a0" },
   { id: "p5", label: "1/6", value: 1 / 6, color: "#118ab2" },
 ];
+export const FRACTION_PUZZLES = [
+  { id: "whole", title: "Make 1 Whole", targetLabel: "1", target: 1, pieces: FRACTION_PIECES },
+  { id: "two-thirds", title: "Make 2/3", targetLabel: "2/3", target: 2 / 3, pieces: [
+    { id: "q1", label: "1/3", value: 1 / 3, color: "#06d6a0" }, { id: "q2", label: "1/3", value: 1 / 3, color: "#04b586" },
+    { id: "q3", label: "1/2", value: 0.5, color: "#ef476f" }, { id: "q4", label: "1/6", value: 1 / 6, color: "#118ab2" },
+    { id: "q5", label: "1/4", value: 0.25, color: "#ffd166" } ] },
+];
 export const HOTSPOTS = [
   { id: "qutb-minar", title: "Qutb Minar", pos: [-6, 0, -10] as const,
     card: "The Qutb Minar in Delhi is a tall, tapering tower of victory made of red sandstone and marble. UNESCO lists the Qutb Minar complex as a World Heritage Site. Construction began under Qutb-ud-din Aibak and the tower was later extended by other rulers. Its walls have fluted (grooved) surfaces and decorative carved bands.",
