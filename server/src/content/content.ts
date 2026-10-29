@@ -34,9 +34,9 @@ export const ATOMS: Record<string, { label: string; element: string; correctSlot
   hydrogen2: { label: "H — Hydrogen 2", element: "H", correctSlot: "right" },
 };
 export const SCIENCE_HINTS = [
-  "Water's chemical formula is H₂O. Count the atoms in that formula.",
-  "H₂O means two hydrogen atoms. How many oxygen atoms does it show?",
-  "The big oxygen atom belongs in the centre, with one hydrogen on each side.",
+  "Water is made from hydrogen and oxygen.",
+  "Place oxygen in the central O slot. The two H slots need hydrogen.",
+  "Use one O atom in the center and one H atom on each side.",
 ];
 // Level 2: carbon dioxide CO2 — carbon centre, one oxygen on each side (linear molecule).
 export const CO2_ATOMS: Record<string, { label: string; element: string; correctSlot: string }> = {

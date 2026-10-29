@@ -30,8 +30,10 @@ export const SOURCES = [
 ];
 
 export const MOLECULES = {
-  h2o: { name: "💧 Water — H₂O", formula: "H₂O", mission: "Place oxygen in the centre and one hydrogen on each side.",
+  h2o: { name: "Water — H₂O", formula: "H₂O", title: "Build H₂O — Water", mission: "Place oxygen in the centre and one hydrogen on each side.",
+    explanation: "One oxygen atom and two hydrogen atoms form a water molecule (H₂O). This is a simplified educational model, not a full chemistry simulation.",
     atoms: [["oxygen", "O — Oxygen"], ["hydrogen1", "H — Hydrogen 1"], ["hydrogen2", "H — Hydrogen 2"]] as [string, string][] },
-  co2: { name: "🫧 Carbon dioxide — CO₂", formula: "CO₂", mission: "Place carbon in the centre and one oxygen on each side (a straight, linear molecule).",
+  co2: { name: "Carbon dioxide — CO₂", formula: "CO₂", title: "Build CO₂ — Carbon dioxide", mission: "Place carbon in the centre and one oxygen on each side (a straight, linear molecule).",
+    explanation: "One carbon atom and two oxygen atoms form a carbon dioxide molecule (CO₂). This is a simplified educational model, not a full chemistry simulation.",
     atoms: [["carbon", "C — Carbon"], ["oxygenA", "O — Oxygen 1"], ["oxygenB", "O — Oxygen 2"]] as [string, string][] },
 };

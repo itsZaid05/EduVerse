@@ -4,16 +4,18 @@ import type { Snap } from "../network/client";
 import { HOTSPOTS } from "../games/content";
 import MathStudio from "./MathStudio";
 import Campus from "./Campus";
+import ScienceLab from "./ScienceLab";
 
 export type Zone = "campus" | "math" | "science" | "heritage";
 const COLORS = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5"];
 
 /** One persistent A-Frame scene (no duplicate canvases on zone change). Zones are
  *  swapped entity groups; the camera rig is moved by WASD + mouse look-controls. */
-export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSelected, onSelectPiece, onPlaceBoard }: {
+export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSelected, onSelectPiece, onPlaceBoard, sciSelected, onSelectAtom, onSelectSlot }: {
   room: Room; snap: Snap; zone: Zone;
   onEnterZone: (z: Zone) => void; onHotspot: (id: string) => void;
   mathSelected?: string | null; onSelectPiece?: (id: string) => void; onPlaceBoard?: () => void;
+  sciSelected?: string | null; onSelectAtom?: (id: string) => void; onSelectSlot?: (slot: "center" | "left" | "right") => void;
 }) {
   const rig = useRef<any>(null);
   const remoteEls = useRef(new Map<string, any>());
@@ -89,18 +91,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSe
 
       {zone === "math" && <MathStudio snap={snap} selectedId={mathSelected ?? null} onSelectPiece={onSelectPiece || (() => {})} onPlaceBoard={onPlaceBoard || (() => {})} />}
 
-      {zone === "science" && (() => { const co2 = snap.scienceLevel === "co2"; const placed = co2 ? snap.science2Placed : snap.sciencePlaced; const done = co2 ? snap.science2Complete : snap.scienceComplete; const filled = (slot: string) => Object.values(placed).includes(slot); return (
-        <a-entity>
-          <a-plane rotation="-90 0 0" width="40" height="40" color="#dcfce7" />
-          <a-text value={co2 ? "MOLECULE BUILDER — Build CO2: 1 Carbon + 2 Oxygen (straight line)" : "MOLECULE BUILDER — Build H2O: 2 Hydrogen + 1 Oxygen"} align="center" position="0 3.4 -7" color="#14532d" scale="1.5 1.5 1.5" />
-          <a-sphere position="0 1.6 -5" radius={co2 ? 0.6 : 0.75} color={filled("center") ? (co2 ? "#343a40" : "#e63946") : "#d8dee9"} />
-          <a-text value={co2 ? "C slot" : "O slot"} align="center" position="0 2.6 -5" color="#14532d" />
-          <a-sphere position="-2.2 1.2 -5" radius="0.45" color={filled("left") ? (co2 ? "#e63946" : "#457b9d") : "#cfe8f5"} />
-          <a-sphere position="2.2 1.2 -5" radius="0.45" color={filled("right") ? (co2 ? "#e63946" : "#457b9d") : "#cfe8f5"} />
-          <a-text value={co2 ? "O slot" : "H slot"} align="center" position="-2.2 1.9 -5" color="#14532d" /><a-text value={co2 ? "O slot" : "H slot"} align="center" position="2.2 1.9 -5" color="#14532d" />
-          {done && <a-entity><a-box position="-1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 25" color="#333" /><a-box position="1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 -25" color="#333" /><a-text value={co2 ? "CO2" : "H2O"} align="center" position="0 0.5 -5" color="#14532d" scale="2 2 2" /></a-entity>}
-          <a-text value="Use the panel: switch level, pick an atom, then its position" align="center" position="0 2.8 2" color="#14532d" scale="1.2 1.2 1.2" />
-        </a-entity> ); })()}
+      {zone === "science" && <ScienceLab snap={snap} selectedAtom={sciSelected ?? null} onSelectAtom={onSelectAtom || (() => {})} onSelectSlot={onSelectSlot || (() => {})} />}
 
       {zone === "heritage" && (
         <a-entity>

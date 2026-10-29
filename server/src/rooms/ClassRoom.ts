@@ -107,6 +107,15 @@ export class ClassRoom extends Room<ClassState> {
       client.send("feedback", { text: `🤖 ${text}`, kind: "hint" });
     });
 
+    this.onMessage("requestReset", (client, m: any) => {
+      const p = this.player(client); if (!p) return;
+      const zone = String(m?.zone || "");
+      if (zone !== "science" && zone !== "math" && zone !== "heritage") return;
+      this.pushFeed(`${p.nickname} requested a ${zone} reset.`);
+      this.clients.forEach((c) => { const pl = this.state.players.get(c.sessionId); if (pl?.role === "teacher") c.send("feedback", { text: `🔔 ${p.nickname} requested a ${zone} reset — use your dashboard controls.`, kind: "announce" }); });
+      client.send("feedback", { text: "Reset request sent to your teacher.", kind: "success" });
+    });
+
     this.onMessage("chat", (client, m: any) => {
       const p = this.player(client); if (!p) return;
       const now = Date.now(); if (now - (this.lastChat.get(client.sessionId) || 0) < 800) return; // rate limit

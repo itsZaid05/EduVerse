@@ -77,6 +77,8 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
   const [hotspot, setHotspot] = useState<string | null>(null);
   const [chat, setChat] = useState("");
   const [mathSel, setMathSel] = useState<string | null>(null);
+  const [sciSel, setSciSel] = useState<string | null>(null);
+  const [sciMsg, setSciMsg] = useState("Select an atom from the tray, then click its target slot.");
   const [mathMsg, setMathMsg] = useState("Select a fraction piece from the tray, then place it on the forge board.");
   const [showSummary, setShowSummary] = useState(false);
   const me = snap.players.find((p) => p.id === room.sessionId);
@@ -104,11 +106,27 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
     room.send("placeFraction", { pieceId: mathSel }); setMathSel(null); setMathMsg("Placing…");
   };
   useEffect(() => { setMathSel(null); }, [snap.mathPuzzle, snap.mathPlaced.join(","), zone]); // eslint-disable-line
+  const sciLvl = (snap.scienceLevel === "co2" ? "co2" : "h2o") as "h2o" | "co2";
+  const sciMol = MOLECULES[sciLvl];
+  const sciPlaced = sciLvl === "co2" ? snap.science2Placed : snap.sciencePlaced;
+  const sciDone = sciLvl === "co2" ? snap.science2Complete : snap.scienceComplete;
+  const sciAttempts = sciLvl === "co2" ? snap.science2Attempts : snap.scienceAttempts;
+  const selectAtom = (id: string) => {
+    const atom = sciMol.atoms.find(([a]) => a === id); if (!atom) return;
+    if (id in sciPlaced) { setSciMsg(`${atom[1]} is already placed — each atom can be used only once.`); return; }
+    if (sciDone) { setSciMsg("This molecule is complete. Ask your teacher for a reset to build it again."); return; }
+    setSciSel(id); setSciMsg(`Selected ${atom[1]}. Now click the matching target slot on the assembly station.`);
+  };
+  const selectSlot = (slot: "center" | "left" | "right") => {
+    if (!sciSel) { setSciMsg("Select an atom from the tray first, then click a target slot."); return; }
+    room.send("placeAtom", { atomId: sciSel, slotId: slot, level: sciLvl }); setSciSel(null); setSciMsg("Placing…");
+  };
+  useEffect(() => { setSciSel(null); }, [sciLvl, JSON.stringify(sciPlaced), zone]); // eslint-disable-line
 
   return (
     <main className="layout">
       <section className="stage">
-        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} mathSelected={mathSel} onSelectPiece={selectPiece} onPlaceBoard={placeSelected} />
+        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} mathSelected={mathSel} onSelectPiece={selectPiece} onPlaceBoard={placeSelected} sciSelected={sciSel} onSelectAtom={selectAtom} onSelectSlot={selectSlot} />
         <div className="hud-top">
           <strong>🌍 EduVerse</strong><span>Code: {snap.code}</span><span>📍 {zone}</span>
           <span>⭐ Team {snap.teamScore}</span><Elapsed start={snap.elapsedStart} /><span>🙋 {nickname} · {me?.score || 0} pts</span>
@@ -156,17 +174,27 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
           <p className="fine">Puzzles scored: {FRACTION_PUZZLES.map((x) => `${snap.mathDone.includes(x.id) ? "✅" : "⬜"} ${x.title}`).join(" · ")}</p>
         </div>; })()}
 
-        {zone === "science" && (() => { const lvl = (snap.scienceLevel === "co2" ? "co2" : "h2o") as "h2o" | "co2"; const mol = MOLECULES[lvl]; const placed = lvl === "co2" ? snap.science2Placed : snap.sciencePlaced; const done = lvl === "co2" ? snap.science2Complete : snap.scienceComplete; const att = lvl === "co2" ? snap.science2Attempts : snap.scienceAttempts; return <div>
-          <h2>🔬 Molecule Builder</h2>
-          <div className="btnrow">{(["h2o", "co2"] as const).map((l) => <button key={l} className={lvl === l ? "on" : ""} onClick={() => room.send("setScienceLevel", { level: l })}>{MOLECULES[l].name}{l === "h2o" && snap.scienceComplete ? " ✅" : l === "co2" && snap.science2Complete ? " ✅" : ""}</button>)}</div>
-          <p><b>Mission:</b> build <b>{mol.formula}</b>. {mol.mission} (Simplified model, not a full chemistry simulation.)</p>
-          <p>Placed: {Object.keys(placed).length}/3 · Attempts: {att} {done && "· ✅ Complete (+100)"}</p>
-          {mol.atoms.map(([atom, label]) => (
-            <div key={atom} className="atomrow"><span>{label}{placed[atom] ? ` ✓ (${placed[atom]})` : ""}</span>
-              {["center", "left", "right"].map((sl) => <button key={sl} disabled={!!placed[atom]} onClick={() => room.send("placeAtom", { atomId: atom, slotId: sl, level: lvl })}>{sl}</button>)}</div>
-          ))}
-          <div className="btnrow"><button onClick={() => room.send("hint", { zone: "science" })}>💡 Hint</button><button onClick={() => room.send("aiHint", { subject: "science", mistake: "atom-count" })}>🤖 Ask AI hint</button></div>
-        </div>; })()}
+        {zone === "science" && <div className="mission">
+          <p className="kicker">SCIENCE LAB</p><h2>MOLECULE BUILDER</h2>
+          <p className="obj">{sciMol.title}. {sciMol.mission}</p>
+          <div className="btnrow">{(["h2o", "co2"] as const).map((l) => <button key={l} className={sciLvl === l ? "on" : ""} onClick={() => room.send("setScienceLevel", { level: l })}>{l === "h2o" ? "💧 H₂O" : "🫧 CO₂"}{l === "h2o" && snap.scienceComplete ? " ✅" : l === "co2" && snap.science2Complete ? " ✅" : ""}</button>)}</div>
+          <p className="meta">Progress: <b>{Object.keys(sciPlaced).length}/3 atoms placed</b> · Attempts: {sciAttempts} · Hints used: {Math.min(snap.scienceHint, 3)}/3</p>
+          <div className="cells" role="img" aria-label={`Progress ${Object.keys(sciPlaced).length} of 3 atoms`}>{["center", "left", "right"].map((sl) => <span key={sl} className="cell" style={Object.values(sciPlaced).includes(sl) ? { background: "#2a9d6f", flex: 1 } : { flex: 1 }} />)}</div>
+          <p className="selmsg" role="status">{sciMsg}</p>
+          <h3>Atom inventory</h3>
+          <div className="traydom">
+            {sciMol.atoms.map(([id, label]) => { const used = id in sciPlaced; return <button key={id} className={`piecebtn${sciSel === id ? " sel" : ""}${used ? " used" : ""}`} style={{ flex: 1 }} onClick={() => selectAtom(id)} aria-pressed={sciSel === id}>{label}<small>{used ? "used" : "available"}</small></button>; })}
+          </div>
+          <h3>Target slots</h3>
+          <div className="btnrow">{([["center", sciLvl === "co2" ? "C — centre" : "O — centre"], ["left", sciLvl === "co2" ? "O — left" : "H — left"], ["right", sciLvl === "co2" ? "O — right" : "H — right"]] as const).map(([sl, label]) => <button key={sl} disabled={Object.values(sciPlaced).includes(sl)} onClick={() => selectSlot(sl)}>{label}{Object.values(sciPlaced).includes(sl) ? " ✓" : ""}</button>)}</div>
+          <div className="howto"><h3>HOW TO PLAY</h3><ol>
+            <li className={!sciSel && !sciDone ? "step-on" : ""}>Select an atom from the tray.</li>
+            <li className={sciSel ? "step-on" : ""}>Click the matching target position.</li>
+            <li>Complete {sciMol.formula} using {sciLvl === "co2" ? "one C and two O" : "one O and two H"} atoms.</li>
+            <li>Use hints if you need help.</li></ol></div>
+          <div className="btnrow"><button onClick={() => room.send("hint", { zone: "science" })}>Hint ({Math.min(snap.scienceHint, 3)}/3)</button><button onClick={() => room.send("aiHint", { subject: "science", mistake: "atom-count" })}>Ask AI hint</button><button onClick={() => room.send("requestReset", { zone: "science" })}>Request reset</button></div>
+          {sciDone && <div className="complete"><h3>MOLECULE COMPLETE!</h3><p className="eq">{sciMol.formula} — {sciLvl === "co2" ? "Carbon dioxide" : "Water"}</p><p>{sciMol.explanation}</p><div className="btnrow"><button onClick={() => enter("campus")}>Back to campus</button><button onClick={() => enter("heritage")}>Next: Heritage Explorer</button></div></div>}
+        </div>}
 
         {zone === "heritage" && <div>
           <h2>🏛️ Heritage Explorer: Qutb Minar</h2>
