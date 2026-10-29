@@ -9,12 +9,12 @@ export const FRACTION_PIECES: Record<string, { label: string; value: number }> =
   p5: { label: "1/6", value: 1 / 6 },
 };
 export const FRACTION_HINTS = [
-  "Look at the empty space in the whole bar. Which piece size would fit neatly?",
-  "Try starting with the biggest piece, 1/2. What fraction is still missing?",
-  "After 1/2, you need another 1/2 in total. Quarters can make a half: 1/4 + 1/4.",
+  "A whole contains twelve twelfths. How many twelfths does one half represent?",
+  "One half is 6/12. Each quarter is 3/12.",
+  "Try combining 6/12, 3/12, and 3/12.",
 ];
 export const FRACTION_EXPLANATION =
-  "1/2 + 1/4 + 1/4 = 1 whole. Two quarters make one half, and a half plus a half makes the whole. The 1/3 and 1/6 pieces are not needed for this target.";
+  "The placed pieces total exactly 12/12 = 1 whole. In twelfths: a half is 6/12, a quarter is 3/12, a third is 4/12 and a sixth is 2/12 — whichever pieces you used, their twelfths add to 12.";
 
 export interface FractionPuzzle { id: string; title: string; targetLabel: string; target: number; pieces: Record<string, { label: string; value: number }>; hints: string[]; explanation: string }
 export const FRACTION_PUZZLES: FractionPuzzle[] = [

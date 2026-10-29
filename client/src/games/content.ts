@@ -1,17 +1,17 @@
 // Client copy of reviewed content (server remains authoritative for answers/validation).
 export const FRACTION_PIECES = [
-  { id: "p1", label: "1/2", value: 0.5, color: "#ef476f" },
-  { id: "p2", label: "1/4", value: 0.25, color: "#ffd166" },
-  { id: "p3", label: "1/4", value: 0.25, color: "#ffb703" },
+  { id: "p1", label: "1/2", value: 0.5, color: "#c94f63" },
+  { id: "p2", label: "1/4", value: 0.25, color: "#eda83a" },
+  { id: "p3", label: "1/4", value: 0.25, color: "#d98a24" },
   { id: "p4", label: "1/3", value: 1 / 3, color: "#06d6a0" },
   { id: "p5", label: "1/6", value: 1 / 6, color: "#118ab2" },
 ];
 export const FRACTION_PUZZLES = [
-  { id: "whole", title: "Make 1 Whole", targetLabel: "1", target: 1, pieces: FRACTION_PIECES },
+  { id: "whole", title: "Make 1 Whole", targetLabel: "1", target: 1, pieces: FRACTION_PIECES, explanation: "The placed pieces total exactly 12/12 = 1 whole. A half is 6/12, each quarter is 3/12, a third is 4/12 and a sixth is 2/12 — the twelfths add to 12." },
   { id: "two-thirds", title: "Make 2/3", targetLabel: "2/3", target: 2 / 3, pieces: [
-    { id: "q1", label: "1/3", value: 1 / 3, color: "#06d6a0" }, { id: "q2", label: "1/3", value: 1 / 3, color: "#04b586" },
-    { id: "q3", label: "1/2", value: 0.5, color: "#ef476f" }, { id: "q4", label: "1/6", value: 1 / 6, color: "#118ab2" },
-    { id: "q5", label: "1/4", value: 0.25, color: "#ffd166" } ] },
+    { id: "q1", label: "1/3", value: 1 / 3, color: "#2a9d8f" }, { id: "q2", label: "1/3", value: 1 / 3, color: "#218276" },
+    { id: "q3", label: "1/2", value: 0.5, color: "#c94f63" }, { id: "q4", label: "1/6", value: 1 / 6, color: "#457b9d" },
+    { id: "q5", label: "1/4", value: 0.25, color: "#eda83a" } ], explanation: "1/3 + 1/3 = 2/3. Another correct solution is 1/2 + 1/6 = 3/6 + 1/6 = 4/6 = 2/3. The 1/4 piece does not fit this target." },
 ];
 export const HOTSPOTS = [
   { id: "qutb-minar", title: "Qutb Minar", pos: [-6, 0, -10] as const,

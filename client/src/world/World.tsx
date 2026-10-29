@@ -1,16 +1,18 @@
 import React, { useEffect, useRef } from "react";
 import type { Room } from "colyseus.js";
 import type { Snap } from "../network/client";
-import { FRACTION_PIECES, FRACTION_PUZZLES, HOTSPOTS } from "../games/content";
+import { HOTSPOTS } from "../games/content";
+import MathStudio from "./MathStudio";
 
 export type Zone = "campus" | "math" | "science" | "heritage";
 const COLORS = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5"];
 
 /** One persistent A-Frame scene (no duplicate canvases on zone change). Zones are
  *  swapped entity groups; the camera rig is moved by WASD + mouse look-controls. */
-export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
+export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSelected, onSelectPiece, onPlaceBoard }: {
   room: Room; snap: Snap; zone: Zone;
   onEnterZone: (z: Zone) => void; onHotspot: (id: string) => void;
+  mathSelected?: string | null; onSelectPiece?: (id: string) => void; onPlaceBoard?: () => void;
 }) {
   const rig = useRef<any>(null);
   const remoteEls = useRef(new Map<string, any>());
@@ -60,7 +62,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
   useEffect(() => { remotes.forEach((p) => remoteTarget.current.set(p.id, { x: p.x, z: p.z })); });
 
   return (
-    <a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true" style={{ width: "100%", height: "100%" }}>
+    <a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true; shadowMapEnabled: true; shadowMapType: pcfsoft" style={{ width: "100%", height: "100%" }}>
       <a-sky color={zone === "heritage" ? "#ffe8c9" : "#aee7ff"} />
       <a-entity light="type: ambient; intensity: 0.8" />
       <a-entity light="type: directional; intensity: 0.7" position="5 10 5" />
@@ -98,21 +100,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
         </a-entity>
       )}
 
-      {zone === "math" && (() => { const pz = FRACTION_PUZZLES.find((x) => x.id === snap.mathPuzzle) || FRACTION_PUZZLES[0]; const placedPz = pz.pieces.filter((pc) => snap.mathPlaced.includes(pc.id)); let fx = -4; return (
-        <a-entity>
-          <a-plane rotation="-90 0 0" width="40" height="40" color="#dbeafe" />
-          <a-box position="0 1 -8" width="12" height="4" depth="0.4" color="#14324a" />
-          <a-text value={`FRACTION FORGE — ${pz.title}!`} align="center" position="0 2.6 -7.7" color="#fff" scale="1.6 1.6 1.6" />
-          <a-box position="0 0.5 -4" width="9" height="0.3" depth="0.3" color="#333" />
-          {placedPz.map((pc) => { const w = (pc.value / pz.target) * 8; const x = fx + w / 2; fx += w; return <a-box key={pc.id} position={`${x} 1.1 -4`} width={w - 0.06} height="0.9" depth="0.5" color={pc.color} />; })}
-          {pz.pieces.map((pc, i) => (
-            <a-entity key={pc.id} position={`${-6 + i * 3} 0 -1`}>
-              <a-box class="clickable" width="1.6" height="1" depth="0.6" color={snap.mathPlaced.includes(pc.id) ? "#999" : pc.color} position="0 1 0"
-                onClick={() => room.send("placeFraction", { pieceId: pc.id })} />
-              <a-text value={pc.label} align="center" position="0 1 0.35" color="#fff" scale="1.3 1.3 1.3" />
-            </a-entity>
-          ))}
-        </a-entity> ); })()}
+      {zone === "math" && <MathStudio snap={snap} selectedId={mathSelected ?? null} onSelectPiece={onSelectPiece || (() => {})} onPlaceBoard={onPlaceBoard || (() => {})} />}
 
       {zone === "science" && (() => { const co2 = snap.scienceLevel === "co2"; const placed = co2 ? snap.science2Placed : snap.sciencePlaced; const done = co2 ? snap.science2Complete : snap.scienceComplete; const filled = (slot: string) => Object.values(placed).includes(slot); return (
         <a-entity>

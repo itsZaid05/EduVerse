@@ -76,6 +76,8 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
   const [zone, setZone] = useState<Zone>("campus");
   const [hotspot, setHotspot] = useState<string | null>(null);
   const [chat, setChat] = useState("");
+  const [mathSel, setMathSel] = useState<string | null>(null);
+  const [mathMsg, setMathMsg] = useState("Select a fraction piece from the tray, then place it on the forge board.");
   const [showSummary, setShowSummary] = useState(false);
   const me = snap.players.find((p) => p.id === room.sessionId);
 
@@ -88,11 +90,25 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
 
   const allDone = snap.mathComplete && snap.scienceComplete && snap.heritageFound.length >= 3;
   const hs = HOTSPOTS.find((h) => h.id === hotspot);
+  const mathPz = FRACTION_PUZZLES.find((x) => x.id === snap.mathPuzzle) || FRACTION_PUZZLES[0];
+  const pieceById = (id: string) => mathPz.pieces.find((x) => x.id === id);
+  const selectPiece = (id: string) => {
+    const pc = pieceById(id); if (!pc) return;
+    if (snap.mathPlaced.includes(id)) { setMathMsg(`${pc.label} is already on the board — pieces cannot be placed twice.`); return; }
+    if (snap.mathComplete) { setMathMsg("This puzzle is complete. Your teacher can rotate or reset it."); return; }
+    if (mathSel === id) { room.send("placeFraction", { pieceId: id }); setMathSel(null); setMathMsg(`Placing ${pc.label}…`); return; }
+    setMathSel(id); setMathMsg(`Selected ${pc.label} (${Math.round(pc.value * 12)}/12). Now click the forge board — or click the piece again — to place it.`);
+  };
+  const placeSelected = () => {
+    if (!mathSel) { setMathMsg("Select a piece from the tray first, then place it."); return; }
+    room.send("placeFraction", { pieceId: mathSel }); setMathSel(null); setMathMsg("Placing…");
+  };
+  useEffect(() => { setMathSel(null); }, [snap.mathPuzzle, snap.mathPlaced.join(","), zone]); // eslint-disable-line
 
   return (
     <main className="layout">
       <section className="stage">
-        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} />
+        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} mathSelected={mathSel} onSelectPiece={selectPiece} onPlaceBoard={placeSelected} />
         <div className="hud-top">
           <strong>🌍 EduVerse</strong><span>Code: {snap.code}</span><span>📍 {zone}</span>
           <span>⭐ Team {snap.teamScore}</span><Elapsed start={snap.elapsedStart} /><span>🙋 {nickname} · {me?.score || 0} pts</span>
@@ -110,12 +126,19 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
 
         {zone === "campus" && <div><h2>Welcome! 🎉</h2><p>Walk to a portal or tap one above: <b>Math Lab</b> (Fraction Forge), <b>Science Lab</b> (Molecule Builder), or <b>Heritage Explorer</b> (Qutb Minar).</p><p>👥 In this session: {snap.players.filter(p=>p.connected).map((p) => p.nickname).join(", ") || "…"}</p></div>}
 
-        {zone === "math" && (() => { const pz = FRACTION_PUZZLES.find((x) => x.id === snap.mathPuzzle) || FRACTION_PUZZLES[0]; const sum = snap.mathPlaced.reduce((t: number, id: string) => t + (pz.pieces.find((x) => x.id === id)?.value || 0), 0); return <div>
-          <h2>➗ Fraction Forge — {pz.title}</h2><p><b>Mission:</b> fill the bar to exactly <b>{pz.targetLabel}</b>. Moves that pass the target are rejected by the server. {snap.mathDone.length}/2 puzzles scored.</p>
-          <div className="bar"><div style={{ width: `${Math.min(100, (sum / pz.target) * 100)}%` }} /></div>
-          <p>Total: <b>{sum.toFixed(2)} / {pz.targetLabel}</b> · Attempts: {snap.mathAttempts} {snap.mathComplete && "· ✅ Complete"}</p>
-          <div className="btnrow">{pz.pieces.map((pc) => <button key={pc.id} disabled={snap.mathPlaced.includes(pc.id)} onClick={() => room.send("placeFraction", { pieceId: pc.id })} style={{ borderColor: pc.color }}>{pc.label}{snap.mathPlaced.includes(pc.id) ? " ✓" : ""}</button>)}</div>
-          <div className="btnrow"><button onClick={() => room.send("hint", { zone: "math" })}>💡 Hint</button><button onClick={() => room.send("aiHint", { subject: "math", mistake: "fraction-sum" })}>🤖 Ask AI hint</button></div>
+        {zone === "math" && (() => { const pz = mathPz; const units = snap.mathPlaced.reduce((t: number, id: string) => t + Math.round((pieceById(id)?.value || 0) * 12), 0); const tUnits = Math.round(pz.target * 12); const gcd = (x: number, y: number): number => (y ? gcd(y, x % y) : x); const g = gcd(units, 12) || 1; const cells: (string | null)[] = Array(12).fill(null); let cur = 0; snap.mathPlaced.forEach((id: string) => { const pc = pieceById(id); if (!pc) return; for (let i = 0; i < Math.round(pc.value * 12) && cur < 12; i++) cells[cur++] = pc.color; }); const placedLabels = snap.mathPlaced.map((id: string) => pieceById(id)?.label).filter(Boolean); return <div className="mission">
+          <h2>Fraction Forge</h2>
+          <p className="obj">Make one whole using the given pieces.</p>
+          <div className="targetrow"><span>Target: <b>{pz.targetLabel === "1" ? "1/1" : pz.targetLabel} = {tUnits}/12</b></span><span>Current: <b>{units}/12{units > 0 && units !== 12 ? ` = ${units / g}/${12 / g}` : ""}{snap.mathComplete ? " · 1 whole" : ""}</b></span></div>
+          <div className="cells" role="img" aria-label={`Progress ${units} of ${tUnits} twelfths`}>{cells.map((c, i) => <span key={i} className={i >= tUnits ? "cell beyond" : "cell"} style={c ? { background: c } : undefined} />)}</div>
+          <p className="meta">Attempts: {snap.mathAttempts} · Hints used: {Math.min(snap.mathHint, 3)}/3 · Pieces placed: {snap.mathPlaced.length}</p>
+          <p className="selmsg" role="status">{mathMsg}</p>
+          <div className="traydom">
+            {pz.pieces.map((pc) => { const used = snap.mathPlaced.includes(pc.id); return <button key={pc.id} className={`piecebtn${mathSel === pc.id ? " sel" : ""}${used ? " used" : ""}`} style={{ flexGrow: Math.round(pc.value * 12), borderColor: pc.color }} onClick={() => selectPiece(pc.id)} aria-pressed={mathSel === pc.id}>{pc.label}<small>{used ? "used" : `${Math.round(pc.value * 12)}/12`}</small></button>; })}
+          </div>
+          <div className="btnrow"><button className="primary placebtn" onClick={placeSelected} disabled={!mathSel || snap.mathComplete}>Place selected piece on board</button></div>
+          <div className="btnrow"><button onClick={() => room.send("hint", { zone: "math" })}>Hint ({Math.min(snap.mathHint, 3)}/3)</button><button onClick={() => room.send("aiHint", { subject: "math", mistake: "fraction-sum" })}>Ask AI hint</button></div>
+          {snap.mathComplete && <div className="complete"><h3>Puzzle complete</h3><p className="eq">{placedLabels.join(" + ")} = {pz.targetLabel === "1" ? "1 whole" : pz.targetLabel}</p><p>{pz.explanation}</p><div className="btnrow"><button onClick={() => enter("campus")}>Back to campus</button><button onClick={() => enter("science")}>Next: Science Lab</button></div></div>}
           <p className="fine">Puzzles scored: {FRACTION_PUZZLES.map((x) => `${snap.mathDone.includes(x.id) ? "✅" : "⬜"} ${x.title}`).join(" · ")}</p>
         </div>; })()}
 

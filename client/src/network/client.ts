@@ -66,7 +66,7 @@ export function snapshot(state: any) {
   const pairs = (s: string) => s ? Object.fromEntries(s.split(",").filter(Boolean).map((x: string) => x.split("="))) : {};
   return {
     code: state.code, activity: state.activity, teamScore: state.teamScore, announcement: state.announcement,
-    mathPlaced: state.mathPlaced ? state.mathPlaced.split(",").filter(Boolean) : [], mathAttempts: state.mathAttempts, mathComplete: state.mathComplete, mathPuzzle: state.mathPuzzle || "whole", mathDone: state.mathDone ? state.mathDone.split(",").filter(Boolean) : [],
+    mathPlaced: state.mathPlaced ? state.mathPlaced.split(",").filter(Boolean) : [], mathAttempts: state.mathAttempts, mathComplete: state.mathComplete, mathHint: state.mathHint || 0, mathPuzzle: state.mathPuzzle || "whole", mathDone: state.mathDone ? state.mathDone.split(",").filter(Boolean) : [],
     sciencePlaced: pairs(state.sciencePlaced || ""), scienceAttempts: state.scienceAttempts, scienceComplete: state.scienceComplete, elapsedStart: state.elapsedStart,
     scienceLevel: state.scienceLevel || "h2o", science2Placed: pairs(state.science2Placed || ""), science2Attempts: state.science2Attempts || 0, science2Complete: !!state.science2Complete,
     mathTooBig: state.mathTooBig || 0, scienceBadSlot: state.scienceBadSlot || 0, heritageWrong: state.heritageWrong || 0,
