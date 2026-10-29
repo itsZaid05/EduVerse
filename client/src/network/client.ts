@@ -70,7 +70,7 @@ export function snapshot(state: any) {
     sciencePlaced: pairs(state.sciencePlaced || ""), scienceAttempts: state.scienceAttempts, scienceComplete: state.scienceComplete, elapsedStart: state.elapsedStart,
     scienceLevel: state.scienceLevel || "h2o", scienceHint: state.scienceHint || 0, science2Placed: pairs(state.science2Placed || ""), science2Attempts: state.science2Attempts || 0, science2Complete: !!state.science2Complete,
     mathTooBig: state.mathTooBig || 0, scienceBadSlot: state.scienceBadSlot || 0, heritageWrong: state.heritageWrong || 0,
-    heritageFound: state.heritageFound ? state.heritageFound.split(",").filter(Boolean) : [], heritageAttempts: state.heritageAttempts,
+    heritageFound: state.heritageFound ? state.heritageFound.split(",").filter(Boolean) : [], heritageAttempts: state.heritageAttempts, heritageClues: state.heritageClues ? state.heritageClues.split(",").filter(Boolean) : [],
     players, feed: [...(state.feed || [])], chat: [...(state.chat || [])],
   };
 }

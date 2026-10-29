@@ -39,6 +39,7 @@ export class ClassState extends Schema {
   @type("number") heritageWrong = 0;     // wrong knowledge-check answers
   // Heritage
   @type("string") heritageFound = ""; // csv hotspot ids (team-shared)
+  @type("string") heritageClues = ""; // csv of accepted conservation-clue ids
   @type("number") heritageAttempts = 0;
   @type("number") heritageHint = 0;
   @type("string") announcement = "";

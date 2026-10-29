@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "colyseus.js";
 import { joinClass, snapshot, type Snap } from "./network/client";
 import World, { type Zone } from "./world/World";
-import { FRACTION_PIECES, FRACTION_PUZZLES, HOTSPOTS, SOURCES, MOLECULES } from "./games/content";
+import { FRACTION_PIECES, FRACTION_PUZZLES, HOTSPOTS, CONSERVATION_CLUES, SOURCES, MOLECULES } from "./games/content";
 
 type Feedback = { text: string; kind: string };
 
@@ -75,6 +75,8 @@ export function Elapsed({ start }: { start: number }) {
 function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: Snap; feedback: Feedback[]; conn: string; nickname: string }) {
   const [zone, setZone] = useState<Zone>("campus");
   const [hotspot, setHotspot] = useState<string | null>(null);
+  const [clueView, setClueView] = useState<string | null>(null);
+  const openClue = (id: string) => { room.send("activateClue", { clueId: id }); setClueView(id); };
   const [chat, setChat] = useState("");
   const [mathSel, setMathSel] = useState<string | null>(null);
   const [sciSel, setSciSel] = useState<string | null>(null);
@@ -126,7 +128,7 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
   return (
     <main className="layout">
       <section className="stage">
-        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} mathSelected={mathSel} onSelectPiece={selectPiece} onPlaceBoard={placeSelected} sciSelected={sciSel} onSelectAtom={selectAtom} onSelectSlot={selectSlot} />
+        <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} mathSelected={mathSel} onSelectPiece={selectPiece} onPlaceBoard={placeSelected} sciSelected={sciSel} onSelectAtom={selectAtom} onSelectSlot={selectSlot} onClue={openClue} />
         <div className="hud-top">
           <strong>🌍 EduVerse</strong><span>Code: {snap.code}</span><span>📍 {zone}</span>
           <span>⭐ Team {snap.teamScore}</span><Elapsed start={snap.elapsedStart} /><span>🙋 {nickname} · {me?.score || 0} pts</span>
@@ -196,18 +198,36 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
           {sciDone && <div className="complete"><h3>MOLECULE COMPLETE!</h3><p className="eq">{sciMol.formula} — {sciLvl === "co2" ? "Carbon dioxide" : "Water"}</p><p>{sciMol.explanation}</p><div className="btnrow"><button onClick={() => enter("campus")}>Back to campus</button><button onClick={() => enter("heritage")}>Next: Heritage Explorer</button></div></div>}
         </div>}
 
-        {zone === "heritage" && <div>
-          <h2>🏛️ Heritage Explorer: Qutb Minar</h2>
-          <p><i>Stylized educational reconstruction — not a survey-accurate model.</i></p>
-          <p><b>Mission:</b> find 3 discoveries ({snap.heritageFound.length}/3). Walk to glowing markers or tap:</p>
-          <div className="btnrow">{HOTSPOTS.map((h) => <button key={h.id} onClick={() => setHotspot(h.id)}>{snap.heritageFound.includes(h.id) ? "✅ " : "📍 "}{h.title}</button>)}</div>
-          <button onClick={() => room.send("hint", { zone: "heritage" })}>💡 Hint</button>
-          <p className="fine">Sources: {SOURCES.map((s) => <span key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.label}</a>{" · "}</span>)}</p>
+        {zone === "heritage" && <div className="mission">
+          <p className="kicker">HERITAGE EXPLORER</p><h2>Qutb Minar Expedition</h2>
+          <p className="obj">Discover all three heritage clues. <i>Stylized educational reconstruction — not a survey-accurate model.</i></p>
+          <div className="questrows">
+            {HOTSPOTS.map((h) => <div key={h.id} className="questrow"><span>{h.n}. {h.title}</span><b>{snap.heritageFound.includes(h.id) ? "✓ Discovered" : "Not discovered"}</b></div>)}
+          </div>
+          <p className="meta">Progress: <b>{snap.heritageFound.length}/3 discoveries</b> · Team score: <b>{snap.teamScore}</b> · Attempts: {snap.heritageAttempts}</p>
+          <div className="btnrow">{HOTSPOTS.map((h) => <button key={h.id} onClick={() => setHotspot(h.id)}>{snap.heritageFound.includes(h.id) ? "✓ " : `${h.n}. `}{h.title}</button>)}</div>
+          <h3>Conservation scavenger hunt ({snap.heritageClues.length}/3)</h3>
+          <div className="questrows">
+            {CONSERVATION_CLUES.map((c) => <div key={c.id} className="questrow"><span>Clue {c.n}: {c.title}</span><button onClick={() => openClue(c.id)}>{snap.heritageClues.includes(c.id) ? "✓ Found — view" : "Find / view"}</button></div>)}
+          </div>
+          <button onClick={() => room.send("hint", { zone: "heritage" })}>Hint</button>
+          {snap.heritageFound.length >= 3 && <div className="complete"><h3>EXPEDITION COMPLETE</h3>
+            <p>✓ The tower's alternating angular and rounded fluting (Discovery 1)</p>
+            <p>✓ Alai Darwaza's red sandstone and white marble decoration (Discovery 2)</p>
+            <p>✓ Conservation principles: stay on paths, look don't touch, respect boundaries (Discovery 3)</p>
+            <p>Team score: <b>{snap.teamScore}</b></p>
+            <div className="btnrow"><button onClick={() => enter("campus")}>Back to campus</button><button onClick={() => setShowSummary(true)}>Session summary</button></div></div>}
+          <p className="fine">Sources: {SOURCES.map((x) => <span key={x.url}><a href={x.url} target="_blank" rel="noreferrer">{x.label}</a>{" · "}</span>)}</p>
         </div>}
 
-        {hs && <div className="cardbox"><h3>{hs.title}</h3><p>{hs.card}</p><p><b>{hs.question}</b></p>
-          {hs.options.map((o, i) => <button key={i} className="opt" onClick={() => room.send("answerHeritage", { hotspotId: hs.id, answerIndex: i })}>{o}</button>)}
-          <button className="opt" onClick={() => setHotspot(null)}>Close card</button></div>}
+        {hs && <div className="cardbox"><h3>Discovery {hs.n} — {hs.title}</h3><p>{hs.card}</p>
+          {snap.heritageFound.includes(hs.id) ? <><p><b>✓ Your team discovered this.</b> {hs.explain}</p></> :
+          hs.id === "conservation" && snap.heritageClues.length < 3 ? <p><b>First complete the conservation scavenger hunt:</b> find the 3 clue markers around the courtyard ({snap.heritageClues.length}/3 found), then this knowledge check unlocks.</p> :
+          <><p><b>{hs.question}</b></p>{hs.options.map((o, i) => <button key={i} className="opt" onClick={() => room.send("answerHeritage", { hotspotId: hs.id, answerIndex: i })}>{String.fromCharCode(65 + i)}. {o}</button>)}</>}
+          <p className="fine">Source: <a href={hs.source} target="_blank" rel="noreferrer">UNESCO World Heritage Centre</a></p>
+          <button className="opt" onClick={() => setHotspot(null)}>Close card — keep exploring</button></div>}
+
+        {clueView && (() => { const c = CONSERVATION_CLUES.find((x) => x.id === clueView); if (!c) return null; return <div className="cardbox"><h3>Conservation clue {c.n} — {c.title}</h3><p>{c.text}</p><p>{snap.heritageClues.includes(c.id) ? <b>✓ Recorded for your team.</b> : "Activating…"}</p><button className="opt" onClick={() => setClueView(null)}>Close — keep exploring</button></div>; })()}
 
         <div className="chat"><h3>💬 Class chat (this session)</h3>
           <div className="chatlog">{snap.chat.slice(-6).map((c, i) => <p key={i}>{c}</p>)}</div>

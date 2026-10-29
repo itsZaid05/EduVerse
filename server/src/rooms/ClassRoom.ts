@@ -4,7 +4,7 @@ import {
   validateFractionMove, getPuzzle, validateAtomMove, validateHeritageAnswer,
   sanitizeText, validNickname, validCode, clampPos, ZONES,
 } from "../services/puzzles";
-import { FRACTION_HINTS, SCIENCE_HINTS, CO2_HINTS, SCIENCE_EXPLANATION, CO2_EXPLANATION, HERITAGE_HOTSPOTS, FRACTION_PUZZLES } from "../content/content";
+import { FRACTION_HINTS, SCIENCE_HINTS, CO2_HINTS, SCIENCE_EXPLANATION, CO2_EXPLANATION, HERITAGE_HOTSPOTS, CONSERVATION_CLUES, FRACTION_PUZZLES } from "../content/content";
 import { getAiHint } from "../services/aiHints";
 
 const TEACHER_PIN = process.env.TEACHER_PIN || "1234";
@@ -77,10 +77,22 @@ export class ClassRoom extends Room<ClassState> {
       } else this.broadcast("feedback", { text: `✓ ${r.reason}`, kind: "success" });
     });
 
+    this.onMessage("activateClue", (client, m: any) => {
+      const p = this.player(client); if (!p) return;
+      const clue = CONSERVATION_CLUES.find((c: any) => c.id === String(m?.clueId || ""));
+      if (!clue) return this.feedback(client, "Unknown conservation clue.");
+      if (csv(this.state.heritageClues).includes(clue.id)) return this.feedback(client, `Your team already found this clue: ${clue.title}.`);
+      this.state.heritageClues = [...csv(this.state.heritageClues), clue.id].join(",");
+      this.broadcast("feedback", { text: `🧭 Conservation clue found (${csv(this.state.heritageClues).length}/3): ${clue.title}.`, kind: "success" });
+      this.pushFeed(`${p.nickname} found conservation clue "${clue.title}".`);
+    });
+
     this.onMessage("answerHeritage", (client, m: any) => {
       const p = this.player(client); if (!p) return;
       const id = String(m?.hotspotId || "");
       if (csv(this.state.heritageFound).includes(id)) return this.feedback(client, "Your team already discovered this hotspot.");
+      if (id === "conservation" && csv(this.state.heritageClues).length < CONSERVATION_CLUES.length)
+        return this.feedback(client, "Complete the 3 conservation clues around the courtyard first, then answer the knowledge check.");
       const r = validateHeritageAnswer(id, Number(m?.answerIndex));
       p.attempts++; this.state.heritageAttempts++;
       if (!r.ok) { this.state.heritageWrong++; return this.feedback(client, `✗ ${r.reason}`); }
@@ -144,7 +156,7 @@ export class ClassRoom extends Room<ClassState> {
         this.pushFeed(`Teacher rotated Fraction Forge to "${next.title}".`);
       } else if (action === "resetMath") { this.state.mathPlaced = ""; this.state.mathComplete = false; this.state.mathHint = 0; this.broadcast("feedback", { text: "↺ Teacher reset Fraction Forge.", kind: "announce" }); this.pushFeed("Teacher reset Fraction Forge."); } // replay allowed after reset; mathDone still prevents re-scoring
       else if (action === "resetScience") { this.state.sciencePlaced = ""; this.state.scienceComplete = false; this.state.science2Placed = ""; this.state.science2Complete = false; this.state.scienceLevel = "h2o"; this.state.scienceHint = 0; this.broadcast("feedback", { text: "↺ Teacher reset Molecule Builder.", kind: "announce" }); this.pushFeed("Teacher reset Molecule Builder."); }
-      else if (action === "resetHeritage") { this.state.heritageFound = ""; this.state.players.forEach((pl) => (pl.discoveries = "")); this.broadcast("feedback", { text: "↺ Teacher reset Heritage Explorer.", kind: "announce" }); this.pushFeed("Teacher reset Heritage Explorer."); }
+      else if (action === "resetHeritage") { this.state.heritageFound = ""; this.state.heritageClues = ""; this.state.players.forEach((pl) => (pl.discoveries = "")); this.broadcast("feedback", { text: "↺ Teacher reset Heritage Explorer.", kind: "announce" }); this.pushFeed("Teacher reset Heritage Explorer."); }
       else if (action === "broadcastHint") this.broadcast("feedback", { text: "💡 Teacher hint: Work together — talk through each move before you place it!", kind: "hint" });
     });
   }

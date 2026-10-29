@@ -55,36 +55,44 @@ export const SCIENCE_EXPLANATION =
   "Water (H₂O) contains two hydrogen atoms and one oxygen atom. This is a simplified educational model — real molecules are far smaller and behave in more complex ways than this model shows.";
 
 export interface HeritageHotspot {
-  id: string; title: string; card: string; question: string; options: string[]; answer: number; clue: string;
+  id: string; title: string; card: string; question: string; options: string[]; answer: number; clue: string; explain: string; source: string; version: string;
 }
+// Content v2026.1 — reviewed against UNESCO World Heritage Centre (list 233) and
+// India's Ministry of Culture. Age-appropriate summaries; no invented dates/quotes.
 export const HERITAGE_HOTSPOTS: HeritageHotspot[] = [
   {
-    id: "qutb-minar",
-    title: "Qutb Minar",
-    card: "The Qutb Minar in Delhi is a tall, tapering tower of victory made of red sandstone and marble. UNESCO describes the Qutb Minar complex as a World Heritage Site. Construction of the tower began under Qutb-ud-din Aibak, and it was later extended by other rulers. Its walls have fluted (grooved) surfaces and decorative bands of carving.",
-    question: "What is the Qutb Minar mainly built from?",
-    options: ["Red sandstone and marble", "Glass and steel", "Wood and straw"],
-    answer: 0,
-    clue: "Clue 1: Notice the tower's materials.",
+    id: "qutb-minar", title: "Qutb Minar",
+    card: "The Qutb Minar stands in Delhi, India. This tower of red and buff sandstone is about 72.5 metres tall, tapering from about 14.3 metres wide at the base to 2.75 metres near the top. Its surface shows alternating angular and rounded fluting (grooves). Construction began under Qutb al-Din Aibak and continued under later rulers, and the surrounding complex preserves monuments from different periods of Delhi's history.",
+    question: "Which feature is especially characteristic of Qutb Minar's exterior?",
+    options: ["Alternating angular and rounded fluting", "A glass curtain wall", "A completely smooth cylindrical surface", "A timber shingle roof"],
+    answer: 0, clue: "Clue 1: Notice the tower's grooved surface.",
+    explain: "The tower is known for its alternating angular and rounded fluting.",
+    source: "https://whc.unesco.org/en/list/233", version: "2026.1",
   },
   {
-    id: "alai-darwaza",
-    title: "Alai Darwaza",
-    card: "The Alai Darwaza is a domed gateway in the Qutb complex, built in 1311 CE under Sultan Ala-ud-din Khalji, according to India's Ministry of Culture. It is known for its carved red sandstone, white marble inlay, and its early use of a true dome and pointed arches in India.",
-    question: "What shape sits on top of the Alai Darwaza?",
-    options: ["A dome", "A pyramid roof", "A tall spire"],
-    answer: 0,
-    clue: "Clue 2: Gateways can teach us about building technology.",
+    id: "alai-darwaza", title: "Alai Darwaza",
+    card: "The Alai Darwaza is a monumental gateway in the Qutb complex, built in 1311 CE under Sultan Alauddin Khalji. It combines red sandstone with white marble decorative details, arched openings, patterned panels and carved bands. Because of this refined decoration, it is a useful example of early Indo-Islamic architectural design in India.",
+    question: "Which material combination is visibly important in Alai Darwaza's decoration?",
+    options: ["Red sandstone and white marble", "Glass and aluminum", "Painted plastic and timber", "Granite and transparent acrylic"],
+    answer: 0, clue: "Clue 2: Gateways can teach us about materials and craft.",
+    explain: "Its decoration visibly combines red sandstone with white marble details.",
+    source: "https://whc.unesco.org/en/list/233", version: "2026.1",
   },
   {
-    id: "conservation",
-    title: "Heritage Conservation",
-    card: "Heritage conservation means caring for old monuments so future generations can learn from them. Conservation teams clean stone gently, repair damage with matching materials, and record everything. Visitors help by not climbing on walls, not touching carvings, and keeping the site clean.",
-    question: "Which action helps conserve a monument?",
-    options: ["Keeping the site clean and not touching carvings", "Scratching your name into the stone", "Climbing on the old walls"],
-    answer: 0,
-    clue: "Clue 3: Everyone can help protect heritage.",
+    id: "conservation", title: "Heritage Conservation",
+    card: "Archaeological sites preserve evidence of architecture, craftsmanship and past societies. We protect them by following designated paths, never touching or damaging carved surfaces, never removing stones or fragments, respecting barriers, and keeping the surroundings clean. These general principles help preserve historic material and details for future generations.",
+    question: "Why should visitors avoid touching or damaging historic carved surfaces?",
+    options: ["To help preserve the material and details for future generations", "To make the monument change color", "To make the monument taller", "To prevent people from learning about its history"],
+    answer: 0, clue: "Clue 3: Everyone can help protect heritage.",
+    explain: "Careful behaviour preserves historic material and details for future generations.",
+    source: "https://whc.unesco.org/en/list/233", version: "2026.1",
   },
+];
+export interface ConservationClue { id: string; title: string; text: string }
+export const CONSERVATION_CLUES: ConservationClue[] = [
+  { id: "path", title: "Stay on the visitor path", text: "Designated paths protect fragile ground and buried archaeology. Walking on marked paths lets everyone explore without wearing the site away." },
+  { id: "carved", title: "Look, don't touch", text: "Carved stone looks strong, but touching, rubbing or climbing slowly damages details made by craftspeople centuries ago. Observe carvings closely — without touching them." },
+  { id: "boundary", title: "Respect the boundary", text: "Barriers and marked boundaries protect fragile structures while they are studied and conserved. Staying outside them keeps both visitors and monuments safe." },
 ];
 export const HERITAGE_SOURCES = [
   { label: "UNESCO World Heritage Centre — Qutb Minar and its Monuments, Delhi", url: "https://whc.unesco.org/en/list/233" },

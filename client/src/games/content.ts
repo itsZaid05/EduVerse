@@ -14,15 +14,26 @@ export const FRACTION_PUZZLES = [
     { id: "q5", label: "1/4", value: 0.25, color: "#eda83a" } ], explanation: "1/3 + 1/3 = 2/3. Another correct solution is 1/2 + 1/6 = 3/6 + 1/6 = 4/6 = 2/3. The 1/4 piece does not fit this target." },
 ];
 export const HOTSPOTS = [
-  { id: "qutb-minar", title: "Qutb Minar", pos: [-6, 0, -10] as const,
-    card: "The Qutb Minar in Delhi is a tall, tapering tower of victory made of red sandstone and marble. UNESCO lists the Qutb Minar complex as a World Heritage Site. Construction began under Qutb-ud-din Aibak and the tower was later extended by other rulers. Its walls have fluted (grooved) surfaces and decorative carved bands.",
-    question: "What is the Qutb Minar mainly built from?", options: ["Red sandstone and marble", "Glass and steel", "Wood and straw"] },
-  { id: "alai-darwaza", title: "Alai Darwaza", pos: [7, 0, -6] as const,
-    card: "The Alai Darwaza is a domed gateway in the Qutb complex, built in 1311 CE under Sultan Ala-ud-din Khalji, according to India's Ministry of Culture. It is known for carved red sandstone, white marble inlay, and its early use of a true dome and pointed arches in India.",
-    question: "What shape sits on top of the Alai Darwaza?", options: ["A dome", "A pyramid roof", "A tall spire"] },
-  { id: "conservation", title: "Heritage Conservation", pos: [0, 0, 6] as const,
-    card: "Heritage conservation means caring for old monuments so future generations can learn from them. Teams clean stone gently, repair damage with matching materials, and record everything. Visitors help by not climbing on walls, not touching carvings, and keeping the site clean.",
-    question: "Which action helps conserve a monument?", options: ["Keeping the site clean and not touching carvings", "Scratching your name into the stone", "Climbing on the old walls"] },
+  { id: "qutb-minar", n: 1, title: "Qutb Minar", pos: [-6, 0, -7.2] as const,
+    card: "The Qutb Minar stands in Delhi, India. This tower of red and buff sandstone is about 72.5 metres tall, tapering from about 14.3 metres wide at the base to 2.75 metres near the top. Its surface shows alternating angular and rounded fluting (grooves). Construction began under Qutb al-Din Aibak and continued under later rulers, and the surrounding complex preserves monuments from different periods of Delhi's history.",
+    question: "Which feature is especially characteristic of Qutb Minar's exterior?",
+    options: ["Alternating angular and rounded fluting", "A glass curtain wall", "A completely smooth cylindrical surface", "A timber shingle roof"],
+    explain: "The tower is known for its alternating angular and rounded fluting.", source: "https://whc.unesco.org/en/list/233" },
+  { id: "alai-darwaza", n: 2, title: "Alai Darwaza", pos: [7, 0, -4.6] as const,
+    card: "The Alai Darwaza is a monumental gateway in the Qutb complex, built in 1311 CE under Sultan Alauddin Khalji. It combines red sandstone with white marble decorative details, arched openings, patterned panels and carved bands. Because of this refined decoration, it is a useful example of early Indo-Islamic architectural design in India.",
+    question: "Which material combination is visibly important in Alai Darwaza's decoration?",
+    options: ["Red sandstone and white marble", "Glass and aluminum", "Painted plastic and timber", "Granite and transparent acrylic"],
+    explain: "Its decoration visibly combines red sandstone with white marble details.", source: "https://whc.unesco.org/en/list/233" },
+  { id: "conservation", n: 3, title: "Heritage Conservation", pos: [0.5, 0, 3.6] as const,
+    card: "Archaeological sites preserve evidence of architecture, craftsmanship and past societies. We protect them by following designated paths, never touching or damaging carved surfaces, never removing stones or fragments, respecting barriers, and keeping the surroundings clean. These general principles help preserve historic material and details for future generations.",
+    question: "Why should visitors avoid touching or damaging historic carved surfaces?",
+    options: ["To help preserve the material and details for future generations", "To make the monument change color", "To make the monument taller", "To prevent people from learning about its history"],
+    explain: "Careful behaviour preserves historic material and details for future generations.", source: "https://whc.unesco.org/en/list/233" },
+];
+export const CONSERVATION_CLUES = [
+  { id: "path", n: 1, title: "Stay on the visitor path", pos: [0, 0, 6.8] as const, text: "Designated paths protect fragile ground and buried archaeology. Walking on marked paths lets everyone explore without wearing the site away." },
+  { id: "carved", n: 2, title: "Look, don't touch", pos: [4.2, 0, -4.4] as const, text: "Carved stone looks strong, but touching, rubbing or climbing slowly damages details made by craftspeople centuries ago. Observe carvings closely — without touching them." },
+  { id: "boundary", n: 3, title: "Respect the boundary", pos: [-3.2, 0, -8.4] as const, text: "Barriers and marked boundaries protect fragile structures while they are studied and conserved. Staying outside them keeps both visitors and monuments safe." },
 ];
 export const SOURCES = [
   { label: "UNESCO World Heritage Centre — Qutb Minar and its Monuments", url: "https://whc.unesco.org/en/list/233" },

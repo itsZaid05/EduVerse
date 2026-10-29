@@ -5,17 +5,19 @@ import { HOTSPOTS } from "../games/content";
 import MathStudio from "./MathStudio";
 import Campus from "./Campus";
 import ScienceLab from "./ScienceLab";
+import HeritageExplorer from "./HeritageExplorer";
 
 export type Zone = "campus" | "math" | "science" | "heritage";
 const COLORS = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5"];
 
 /** One persistent A-Frame scene (no duplicate canvases on zone change). Zones are
  *  swapped entity groups; the camera rig is moved by WASD + mouse look-controls. */
-export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSelected, onSelectPiece, onPlaceBoard, sciSelected, onSelectAtom, onSelectSlot }: {
+export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSelected, onSelectPiece, onPlaceBoard, sciSelected, onSelectAtom, onSelectSlot, onClue }: {
   room: Room; snap: Snap; zone: Zone;
   onEnterZone: (z: Zone) => void; onHotspot: (id: string) => void;
   mathSelected?: string | null; onSelectPiece?: (id: string) => void; onPlaceBoard?: () => void;
   sciSelected?: string | null; onSelectAtom?: (id: string) => void; onSelectSlot?: (slot: "center" | "left" | "right") => void;
+  onClue?: (id: string) => void;
 }) {
   const rig = useRef<any>(null);
   const remoteEls = useRef(new Map<string, any>());
@@ -48,6 +50,12 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSe
         const bzMin = zone === "campus" ? -6.2 : -18, bzMax = zone === "campus" ? 15 : 18;
         pos.current.x = Math.max(-bx, Math.min(bx, pos.current.x + dx));
         pos.current.z = Math.max(bzMin, Math.min(bzMax, pos.current.z + dz));
+        if (zone === "heritage") { // keep players out of the monument footprints
+          for (const o of [{ x: -6, z: -11.5, r: 3.6 }, { x: 7, z: -8.6, r: 3.9 }]) {
+            const ddx = pos.current.x - o.x, ddz = pos.current.z - o.z; const d = Math.hypot(ddx, ddz);
+            if (d < o.r && d > 0.001) { pos.current.x = o.x + (ddx / d) * o.r; pos.current.z = o.z + (ddz / d) * o.r; }
+          }
+        }
       }
       if (el) el.setAttribute("position", `${pos.current.x} 0 ${pos.current.z}`);
       // Smooth remote avatars: lerp each towards its latest server position.
@@ -93,33 +101,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSe
 
       {zone === "science" && <ScienceLab snap={snap} selectedAtom={sciSelected ?? null} onSelectAtom={onSelectAtom || (() => {})} onSelectSlot={onSelectSlot || (() => {})} />}
 
-      {zone === "heritage" && (
-        <a-entity>
-          <a-plane rotation="-90 0 0" width="40" height="40" color="#e9d8a6" />
-          <a-text value="QUTB MINAR COMPLEX — stylized educational reconstruction (not to scale)" align="center" position="0 3.2 8" color="#7f4f24" scale="1.4 1.4 1.4" />
-          {/* Tapered fluted tower: stacked, shrinking cylinders + decorative bands */}
-          <a-entity position="-6 0 -12">
-            {[0, 1, 2, 3, 4].map((i) => <a-cylinder key={i} position={`0 ${1.5 + i * 3} 0`} height="3" radiusTop={1.5 - i * 0.22} radiusBottom={1.72 - i * 0.22} color={i % 2 ? "#b5654a" : "#c97b5a"} />)}
-            {[0, 1, 2, 3].map((i) => <a-torus key={i} position={`0 ${3 + i * 3} 0`} radius={1.62 - i * 0.22} tube="0.09" rotation="90 0 0" color="#8a4b2f" />)}
-            <a-cone position="0 16 0" height="1.6" radius="0.7" color="#7f4f24" />
-          </a-entity>
-          {/* Alai Darwaza: domed gateway */}
-          <a-entity position="7 0 -8">
-            <a-box width="4" height="3" depth="1" color="#b5654a" position="0 1.5 0" />
-            <a-sphere radius="1.6" position="0 3.2 0" color="#e9d8a6" />
-            <a-box width="1.4" height="2.2" depth="1.1" color="#5b3a29" position="0 1.1 0" />
-          </a-entity>
-          <a-box position="0 1 -14" width="16" height="2" depth="2" color="#cbb593" />
-          {(() => { const pts: [number, number][] = [[0, 8], ...HOTSPOTS.map((h) => [h.pos[0], h.pos[2]] as [number, number])]; const discs: [number, number][] = []; for (let i = 0; i < pts.length - 1; i++) { for (let t = 0.25; t < 1; t += 0.25) discs.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t]); } return discs.map(([x, z], i) => <a-circle key={i} rotation="-90 0 0" radius="0.28" color="#ffd60a" position={`${x} 0.03 ${z}`} />); })()}
-          {HOTSPOTS.map((h, hi) => (
-            <a-entity key={h.id} position={`${h.pos[0]} 0 ${h.pos[2]}`}>
-              <a-sphere class="clickable" radius="0.45" color={snap.heritageFound.includes(h.id) ? "#06d6a0" : "#ffd60a"} position="0 1.6 0" onClick={() => onHotspot(h.id)}
-                {...(snap.heritageFound.includes(h.id) ? {} : { animation: "property: position; to: 0 1.9 0; dir: alternate; loop: true; dur: 1200" })} />
-              <a-text value={snap.heritageFound.includes(h.id) ? `✓ ${hi + 1}. ${h.title}` : `${hi + 1}. ${h.title}`} align="center" position="0 2.3 0" color="#5b3a29" scale="1.1 1.1 1.1" />
-            </a-entity>
-          ))}
-        </a-entity>
-      )}
+      {zone === "heritage" && <HeritageExplorer snap={snap} onHotspot={onHotspot} onClue={onClue || (() => {})} />}
     </a-scene>
   );
 }
