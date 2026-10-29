@@ -26,6 +26,19 @@ export const SCIENCE_HINTS = [
   "H₂O means two hydrogen atoms. How many oxygen atoms does it show?",
   "The big oxygen atom belongs in the centre, with one hydrogen on each side.",
 ];
+// Level 2: carbon dioxide CO2 — carbon centre, one oxygen on each side (linear molecule).
+export const CO2_ATOMS: Record<string, { label: string; element: string; correctSlot: string }> = {
+  carbon: { label: "C — Carbon", element: "C", correctSlot: "center" },
+  oxygenA: { label: "O — Oxygen 1", element: "O", correctSlot: "left" },
+  oxygenB: { label: "O — Oxygen 2", element: "O", correctSlot: "right" },
+};
+export const CO2_HINTS = [
+  "Carbon dioxide's formula is CO₂. Count: how many carbon, how many oxygen?",
+  "The subscript 2 belongs to oxygen. Carbon has no subscript, so there is just one.",
+  "Carbon goes in the centre, with an oxygen atom on each side — CO₂ is a straight (linear) molecule.",
+];
+export const CO2_EXPLANATION =
+  "Carbon dioxide (CO₂) contains one carbon atom and two oxygen atoms in a straight line. This is a simplified educational model — real molecules are far smaller and behave in more complex ways than this model shows.";
 export const SCIENCE_EXPLANATION =
   "Water (H₂O) contains two hydrogen atoms and one oxygen atom. This is a simplified educational model — real molecules are far smaller and behave in more complex ways than this model shows.";
 

@@ -21,3 +21,10 @@ export const SOURCES = [
   { label: "UNESCO World Heritage Centre — Qutb Minar and its Monuments", url: "https://whc.unesco.org/en/list/233" },
   { label: "Ministry of Culture, Govt. of India — Qutb Minar and its Monuments", url: "https://culture.gov.in/qutb-minar-and-its-monuments" },
 ];
+
+export const MOLECULES = {
+  h2o: { name: "💧 Water — H₂O", formula: "H₂O", mission: "Place oxygen in the centre and one hydrogen on each side.",
+    atoms: [["oxygen", "O — Oxygen"], ["hydrogen1", "H — Hydrogen 1"], ["hydrogen2", "H — Hydrogen 2"]] as [string, string][] },
+  co2: { name: "🫧 Carbon dioxide — CO₂", formula: "CO₂", mission: "Place carbon in the centre and one oxygen on each side (a straight, linear molecule).",
+    atoms: [["carbon", "C — Carbon"], ["oxygenA", "O — Oxygen 1"], ["oxygenB", "O — Oxygen 2"]] as [string, string][] },
+};

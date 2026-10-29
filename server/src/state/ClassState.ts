@@ -27,6 +27,14 @@ export class ClassState extends Schema {
   @type("number") scienceAttempts = 0;
   @type("boolean") scienceComplete = false;
   @type("number") scienceHint = 0;
+  @type("string") scienceLevel = "h2o"; // h2o | co2 (shared team view)
+  @type("string") science2Placed = ""; // CO2 level: csv atomId=slotId
+  @type("boolean") science2Complete = false;
+  @type("number") science2Attempts = 0;
+  // Reliably-classifiable common errors (teacher metrics)
+  @type("number") mathTooBig = 0;        // fraction move rejected for passing 1 whole
+  @type("number") scienceBadSlot = 0;    // atom placed in a wrong/filled position
+  @type("number") heritageWrong = 0;     // wrong knowledge-check answers
   // Heritage
   @type("string") heritageFound = ""; // csv hotspot ids (team-shared)
   @type("number") heritageAttempts = 0;

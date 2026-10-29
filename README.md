@@ -45,6 +45,7 @@ npm test        # server puzzle-validation unit tests (vitest)
 | 8 | Session chat + quick messages (sanitized, length- and rate-limited), team points, badges, session summary |
 | 9 | Optional server AI hints (`AI_API_KEY/AI_API_URL/AI_MODEL`); predefined reviewed hints always work, failure = fallback |
 | 10 | Builds + unit tests verified, multi-client test, this README, `.env.example`, `LICENSES.md` |
+| 11 | CO₂ second science level (independently validated/scored), session timer in HUD/summary/teacher view, camera-relative WASD + rotation sync + smoothed (interpolated) remote avatars, auto-classified common-error metrics (fraction overshoot / wrong atom slot / wrong heritage answer) on the teacher dashboard |
 
 ## Architecture
 
@@ -66,10 +67,9 @@ The Qutb Minar scene is a stylized educational reconstruction, not a survey-accu
 
 - If a student enters a brand-new code before a teacher creates it, they create that session (by design
   for frictionless demos, but codes should be teacher-issued).
-- Movement is world-axis (not camera-relative); remote avatars are smoothed by 150 ms updates, not interpolation.
 - 3D click uses A-Frame's mouse cursor; HUD buttons mirror every interaction for reliability/accessibility.
 - In-memory sessions reset when the server restarts; no persistent grades (intentional for the MVP).
-- A CO₂ second science level and VR support are deferred (not release requirements).
+- VR support is deferred (not a release requirement). Persistent storage across server restarts remains out of scope for the MVP.
 
 ## Deployment
 

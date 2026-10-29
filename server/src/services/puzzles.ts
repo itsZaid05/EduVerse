@@ -1,4 +1,4 @@
-import { FRACTION_PIECES, ATOMS, HERITAGE_HOTSPOTS } from "../content/content";
+import { FRACTION_PIECES, ATOMS, CO2_ATOMS, HERITAGE_HOTSPOTS } from "../content/content";
 
 const EPS = 1e-9;
 
@@ -22,14 +22,17 @@ export function validateFractionMove(placed: string[], pieceId: string): MoveRes
   if (sum > 1 + EPS) return { ok: false, reason: `Too big! ${piece.label} would push the total past 1 whole. Try a smaller piece.` };
   return { ok: true, reason: sum >= 1 - EPS ? "You completed the whole!" : `Placed ${piece.label}. Keep going!`, complete: sum >= 1 - EPS };
 }
-export function validateAtomMove(placed: Record<string, string>, atomId: string, slotId: string): MoveResult {
-  const atom = ATOMS[atomId];
+export type ScienceLevel = "h2o" | "co2";
+export const SCIENCE_LEVELS: ScienceLevel[] = ["h2o", "co2"];
+export function validateAtomMove(placed: Record<string, string>, atomId: string, slotId: string, level: ScienceLevel = "h2o"): MoveResult {
+  const table = level === "co2" ? CO2_ATOMS : ATOMS;
+  const atom = table[atomId];
   if (!atom) return { ok: false, reason: "Unknown atom." };
   if (placed[atomId]) return { ok: false, reason: "That atom is already placed." };
   if (Object.values(placed).includes(slotId)) return { ok: false, reason: "That position is already filled." };
   if (atom.correctSlot !== slotId) return { ok: false, reason: `The ${atom.element} atom doesn't belong there. Check the H₂O target diagram.` };
-  const complete = Object.keys(placed).length + 1 === Object.keys(ATOMS).length;
-  return { ok: true, reason: complete ? "H₂O complete!" : `${atom.label} placed correctly.`, complete };
+  const complete = Object.keys(placed).length + 1 === Object.keys(table).length;
+  return { ok: true, reason: complete ? (level === "co2" ? "CO₂ complete!" : "H₂O complete!") : `${atom.label} placed correctly.`, complete };
 }
 export function validateHeritageAnswer(hotspotId: string, answerIndex: number): MoveResult & { clue?: string } {
   const h = HERITAGE_HOTSPOTS.find((x) => x.id === hotspotId);

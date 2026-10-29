@@ -25,6 +25,20 @@ describe("Molecule Builder validation (Phase 5)", () => {
     expect(r.ok).toBe(true); expect(r.complete).toBe(true);
   });
 });
+describe("Molecule Builder CO2 level (Phase 11)", () => {
+  it("accepts only C centre + O each side and completes", () => {
+    expect(validateAtomMove({}, "carbon", "center", "co2").ok).toBe(true);
+    expect(validateAtomMove({}, "carbon", "left", "co2").ok).toBe(false);
+    expect(validateAtomMove({}, "oxygen", "center", "co2").ok).toBe(false); // h2o atom id invalid in co2
+    expect(validateAtomMove({ carbon: "center" }, "oxygenA", "center", "co2").ok).toBe(false);
+    const r = validateAtomMove({ carbon: "center", oxygenA: "left" }, "oxygenB", "right", "co2");
+    expect(r.ok).toBe(true); expect(r.complete).toBe(true);
+  });
+  it("levels are independent: h2o table unchanged", () => {
+    expect(validateAtomMove({}, "carbon", "center", "h2o").ok).toBe(false);
+    expect(validateAtomMove({}, "oxygen", "center", "h2o").ok).toBe(true);
+  });
+});
 describe("Heritage validation (Phase 6)", () => {
   it("checks answers server-side", () => {
     expect(validateHeritageAnswer("qutb-minar", 0).ok).toBe(true);

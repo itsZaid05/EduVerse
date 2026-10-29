@@ -13,6 +13,9 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
   onEnterZone: (z: Zone) => void; onHotspot: (id: string) => void;
 }) {
   const rig = useRef<any>(null);
+  const remoteEls = useRef(new Map<string, any>());
+  const remotePos = useRef(new Map<string, { x: number; z: number }>());
+  const remoteTarget = useRef(new Map<string, { x: number; z: number }>());
   const pos = useRef({ x: 0, z: 8 });
   const keys = useRef<Record<string, boolean>>({});
   const lastSent = useRef(0);
@@ -23,18 +26,30 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
     const down = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = true; };
     const up = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = false; };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
+    window.addEventListener("blur", () => { keys.current = {}; });
     let raf = 0; const loop = () => {
       const el = rig.current; const k = keys.current; const s = 0.09;
-      let dx = 0, dz = 0;
-      if (k["w"] || k["arrowup"]) dz -= s; if (k["s"] || k["arrowdown"]) dz += s;
-      if (k["a"] || k["arrowleft"]) dx -= s; if (k["d"] || k["arrowright"]) dx += s;
+      // Camera-relative movement: W walks where the camera faces.
+      const cam: any = el?.querySelector("a-camera");
+      const yaw = cam?.object3D?.rotation?.y || 0;
+      const f = (k["w"] || k["arrowup"] ? 1 : 0) - (k["s"] || k["arrowdown"] ? 1 : 0);
+      const r = (k["d"] || k["arrowright"] ? 1 : 0) - (k["a"] || k["arrowleft"] ? 1 : 0);
+      const dx = (-Math.sin(yaw) * f + Math.cos(yaw) * r) * s;
+      const dz = (-Math.cos(yaw) * f - Math.sin(yaw) * r) * s;
       if (dx || dz) {
         pos.current.x = Math.max(-18, Math.min(18, pos.current.x + dx));
         pos.current.z = Math.max(-18, Math.min(18, pos.current.z + dz));
       }
       if (el) el.setAttribute("position", `${pos.current.x} 0 ${pos.current.z}`);
+      // Smooth remote avatars: lerp each towards its latest server position.
+      remoteTarget.current.forEach((t, id) => {
+        const ent = remoteEls.current.get(id); const cur = remotePos.current.get(id);
+        if (!ent || !cur) return;
+        cur.x += (t.x - cur.x) * 0.25; cur.z += (t.z - cur.z) * 0.25;
+        ent.setAttribute("position", `${cur.x} 0 ${cur.z}`);
+      });
       const now = performance.now();
-      if (now - lastSent.current > 150 && (dx || dz)) { lastSent.current = now; room.send("move", { zone, x: pos.current.x, z: pos.current.z, rotY: 0 }); }
+      if (now - lastSent.current > 150 && (dx || dz)) { lastSent.current = now; room.send("move", { zone, x: pos.current.x, z: pos.current.z, rotY: Math.round((yaw * 180) / Math.PI) }); }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -42,6 +57,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
   }, [room, zone]);
 
   const remotes = snap.players.filter((p) => p.id !== room.sessionId && p.zone === zone && p.connected);
+  useEffect(() => { remotes.forEach((p) => remoteTarget.current.set(p.id, { x: p.x, z: p.z })); });
   const placedFrac = FRACTION_PIECES.filter((p) => snap.mathPlaced.includes(p.id));
   let fracX = -4;
 
@@ -57,7 +73,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
       </a-entity>
 
       {remotes.map((p, i) => (
-        <a-entity key={p.id} position={`${p.x} 0 ${p.z}`}>
+        <a-entity key={p.id} rotation={`0 ${p.rotY || 0} 0`} ref={(el: any) => { if (el) { remoteEls.current.set(p.id, el); if (!remotePos.current.has(p.id)) { remotePos.current.set(p.id, { x: p.x, z: p.z }); el.setAttribute("position", `${p.x} 0 ${p.z}`); } } else { remoteEls.current.delete(p.id); remotePos.current.delete(p.id); remoteTarget.current.delete(p.id); } }}>
           <a-cylinder color={COLORS[i % COLORS.length]} height="1.1" radius="0.32" position="0 0.85 0" />
           <a-sphere color="#ffdfc4" radius="0.26" position="0 1.65 0" />
           <a-text value={p.nickname} align="center" color="#14324a" position="0 2.1 0" scale="1.4 1.4 1.4" />
@@ -101,19 +117,18 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot }: {
         </a-entity>
       )}
 
-      {zone === "science" && (
+      {zone === "science" && (() => { const co2 = snap.scienceLevel === "co2"; const placed = co2 ? snap.science2Placed : snap.sciencePlaced; const done = co2 ? snap.science2Complete : snap.scienceComplete; const filled = (slot: string) => Object.values(placed).includes(slot); return (
         <a-entity>
           <a-plane rotation="-90 0 0" width="40" height="40" color="#dcfce7" />
-          <a-text value="MOLECULE BUILDER — Build H2O: 2 Hydrogen + 1 Oxygen" align="center" position="0 3.4 -7" color="#14532d" scale="1.5 1.5 1.5" />
-          <a-sphere position="0 1.6 -5" radius="0.75" color={snap.sciencePlaced.oxygen === "center" ? "#e63946" : "#f3a6ad"} />
-          <a-text value="O slot" align="center" position="0 2.6 -5" color="#14532d" />
-          <a-sphere position="-2.2 1.2 -5" radius="0.45" color={snap.sciencePlaced.hydrogen1 === "left" || snap.sciencePlaced.hydrogen2 === "left" ? "#457b9d" : "#cfe8f5"} />
-          <a-sphere position="2.2 1.2 -5" radius="0.45" color={snap.sciencePlaced.hydrogen1 === "right" || snap.sciencePlaced.hydrogen2 === "right" ? "#457b9d" : "#cfe8f5"} />
-          <a-text value="H slot" align="center" position="-2.2 1.9 -5" color="#14532d" /><a-text value="H slot" align="center" position="2.2 1.9 -5" color="#14532d" />
-          {snap.scienceComplete && <a-entity><a-box position="-1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 25" color="#333" /><a-box position="1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 -25" color="#333" /><a-text value="H2O" align="center" position="0 0.5 -5" color="#14532d" scale="2 2 2" /></a-entity>}
-          <a-text value="Use the panel: pick an atom, then its position" align="center" position="0 2.8 2" color="#14532d" scale="1.2 1.2 1.2" />
-        </a-entity>
-      )}
+          <a-text value={co2 ? "MOLECULE BUILDER — Build CO2: 1 Carbon + 2 Oxygen (straight line)" : "MOLECULE BUILDER — Build H2O: 2 Hydrogen + 1 Oxygen"} align="center" position="0 3.4 -7" color="#14532d" scale="1.5 1.5 1.5" />
+          <a-sphere position="0 1.6 -5" radius={co2 ? 0.6 : 0.75} color={filled("center") ? (co2 ? "#343a40" : "#e63946") : "#d8dee9"} />
+          <a-text value={co2 ? "C slot" : "O slot"} align="center" position="0 2.6 -5" color="#14532d" />
+          <a-sphere position="-2.2 1.2 -5" radius="0.45" color={filled("left") ? (co2 ? "#e63946" : "#457b9d") : "#cfe8f5"} />
+          <a-sphere position="2.2 1.2 -5" radius="0.45" color={filled("right") ? (co2 ? "#e63946" : "#457b9d") : "#cfe8f5"} />
+          <a-text value={co2 ? "O slot" : "H slot"} align="center" position="-2.2 1.9 -5" color="#14532d" /><a-text value={co2 ? "O slot" : "H slot"} align="center" position="2.2 1.9 -5" color="#14532d" />
+          {done && <a-entity><a-box position="-1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 25" color="#333" /><a-box position="1.1 1.4 -5" width="2.2" height="0.12" depth="0.12" rotation="0 0 -25" color="#333" /><a-text value={co2 ? "CO2" : "H2O"} align="center" position="0 0.5 -5" color="#14532d" scale="2 2 2" /></a-entity>}
+          <a-text value="Use the panel: switch level, pick an atom, then its position" align="center" position="0 2.8 2" color="#14532d" scale="1.2 1.2 1.2" />
+        </a-entity> ); })()}
 
       {zone === "heritage" && (
         <a-entity>

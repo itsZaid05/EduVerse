@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "colyseus.js";
 import { joinClass, snapshot, type Snap } from "./network/client";
 import World, { type Zone } from "./world/World";
-import { FRACTION_PIECES, HOTSPOTS, SOURCES } from "./games/content";
+import { FRACTION_PIECES, HOTSPOTS, SOURCES, MOLECULES } from "./games/content";
 
 type Feedback = { text: string; kind: string };
 
@@ -64,6 +64,14 @@ export default function App() {
     : <Student room={room} snap={snap} feedback={feedback} conn={conn} nickname={nickname} />;
 }
 
+export function Elapsed({ start }: { start: number }) {
+  const [, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick((v) => v + 1), 1000); return () => clearInterval(t); }, []);
+  if (!start) return null;
+  const sec = Math.max(0, Math.floor((Date.now() - start) / 1000));
+  return <span>⏱️ {String(Math.floor(sec / 60)).padStart(2, "0")}:{String(sec % 60).padStart(2, "0")}</span>;
+}
+
 function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: Snap; feedback: Feedback[]; conn: string; nickname: string }) {
   const [zone, setZone] = useState<Zone>("campus");
   const [hotspot, setHotspot] = useState<string | null>(null);
@@ -88,7 +96,7 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
         <World room={room} snap={snap} zone={zone} onEnterZone={enter} onHotspot={setHotspot} />
         <div className="hud-top">
           <strong>🌍 EduVerse</strong><span>Code: {snap.code}</span><span>📍 {zone}</span>
-          <span>⭐ Team {snap.teamScore}</span><span>🙋 {nickname} · {me?.score || 0} pts</span>
+          <span>⭐ Team {snap.teamScore}</span><Elapsed start={snap.elapsedStart} /><span>🙋 {nickname} · {me?.score || 0} pts</span>
           {conn && <span className="err">{conn}</span>}
         </div>
         <div className="hud-bottom">⌨️ WASD / arrow keys to walk · 🖱️ drag to look around · Click glowing portals &amp; markers (or use panel buttons)</div>
@@ -111,15 +119,17 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
           <div className="btnrow"><button onClick={() => room.send("hint", { zone: "math" })}>💡 Hint</button><button onClick={() => room.send("aiHint", { subject: "math", mistake: "fraction-sum" })}>🤖 Ask AI hint</button></div>
         </div>}
 
-        {zone === "science" && <div>
-          <h2>🔬 Molecule Builder</h2><p><b>Mission:</b> build water — <b>H₂O</b>. Place oxygen in the centre and one hydrogen on each side. (Simplified model, not a full chemistry simulation.)</p>
-          <p>Placed: {Object.keys(snap.sciencePlaced).length}/3 · Attempts: {snap.scienceAttempts} {snap.scienceComplete && "· ✅ Complete (+100)"}</p>
-          {[["oxygen", "O — Oxygen", ["center", "left", "right"]], ["hydrogen1", "H — Hydrogen 1", ["center", "left", "right"]], ["hydrogen2", "H — Hydrogen 2", ["center", "left", "right"]]].map(([atom, label, slots]: any) => (
-            <div key={atom} className="atomrow"><span>{label}{snap.sciencePlaced[atom] ? ` ✓ (${snap.sciencePlaced[atom]})` : ""}</span>
-              {(slots as string[]).map((s) => <button key={s} disabled={!!snap.sciencePlaced[atom]} onClick={() => room.send("placeAtom", { atomId: atom, slotId: s })}>{s}</button>)}</div>
+        {zone === "science" && (() => { const lvl = (snap.scienceLevel === "co2" ? "co2" : "h2o") as "h2o" | "co2"; const mol = MOLECULES[lvl]; const placed = lvl === "co2" ? snap.science2Placed : snap.sciencePlaced; const done = lvl === "co2" ? snap.science2Complete : snap.scienceComplete; const att = lvl === "co2" ? snap.science2Attempts : snap.scienceAttempts; return <div>
+          <h2>🔬 Molecule Builder</h2>
+          <div className="btnrow">{(["h2o", "co2"] as const).map((l) => <button key={l} className={lvl === l ? "on" : ""} onClick={() => room.send("setScienceLevel", { level: l })}>{MOLECULES[l].name}{l === "h2o" && snap.scienceComplete ? " ✅" : l === "co2" && snap.science2Complete ? " ✅" : ""}</button>)}</div>
+          <p><b>Mission:</b> build <b>{mol.formula}</b>. {mol.mission} (Simplified model, not a full chemistry simulation.)</p>
+          <p>Placed: {Object.keys(placed).length}/3 · Attempts: {att} {done && "· ✅ Complete (+100)"}</p>
+          {mol.atoms.map(([atom, label]) => (
+            <div key={atom} className="atomrow"><span>{label}{placed[atom] ? ` ✓ (${placed[atom]})` : ""}</span>
+              {["center", "left", "right"].map((sl) => <button key={sl} disabled={!!placed[atom]} onClick={() => room.send("placeAtom", { atomId: atom, slotId: sl, level: lvl })}>{sl}</button>)}</div>
           ))}
           <div className="btnrow"><button onClick={() => room.send("hint", { zone: "science" })}>💡 Hint</button><button onClick={() => room.send("aiHint", { subject: "science", mistake: "atom-count" })}>🤖 Ask AI hint</button></div>
-        </div>}
+        </div>; })()}
 
         {zone === "heritage" && <div>
           <h2>🏛️ Heritage Explorer: Qutb Minar</h2>
@@ -143,8 +153,8 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
 
         <button className="primary" onClick={() => setShowSummary(true)}>🏁 View session summary</button>
         {showSummary && <div className="cardbox"><h3>🏆 Session Summary</h3>
-          <p>Team score: <b>{snap.teamScore}</b> · Your score: <b>{me?.score || 0}</b></p>
-          <p>{snap.mathComplete ? "🏅 Fraction Forge badge" : "➗ Fraction Forge: not yet"}<br/>{snap.scienceComplete ? "🏅 Molecule Builder badge" : "🔬 Molecule Builder: not yet"}<br/>{snap.heritageFound.length >= 3 ? "🏅 Heritage Explorer badge" : `🏛️ Heritage discoveries: ${snap.heritageFound.length}/3`}</p>
+          <p>Team score: <b>{snap.teamScore}</b> · Your score: <b>{me?.score || 0}</b> · <Elapsed start={snap.elapsedStart} /></p>
+          <p>{snap.mathComplete ? "🏅 Fraction Forge badge" : "➗ Fraction Forge: not yet"}<br/>{snap.scienceComplete ? "🏅 Molecule Builder (H₂O) badge" : "🔬 Molecule Builder H₂O: not yet"}<br/>{snap.science2Complete ? "🏅 CO₂ Builder badge" : "🫧 Molecule Builder CO₂: optional level"}<br/>{snap.heritageFound.length >= 3 ? "🏅 Heritage Explorer badge" : `🏛️ Heritage discoveries: ${snap.heritageFound.length}/3`}</p>
           {allDone && <p>🎉 <b>All missions complete — amazing teamwork!</b></p>}
           <button className="opt" onClick={() => setShowSummary(false)}>Close</button></div>}
       </aside>
@@ -166,7 +176,8 @@ function Teacher({ room, snap, feedback, conn }: { room: Room; snap: Snap; feedb
           <table><thead><tr><th>Student</th><th>Status</th><th>Zone</th><th>Score</th><th>Attempts</th><th>Discoveries</th></tr></thead>
           <tbody>{students.map((p: any) => <tr key={p.id}><td>{p.nickname}</td><td>{p.connected ? "🟢 online" : "⚪ away"}</td><td>{p.zone}</td><td>{p.score}</td><td>{p.attempts}</td><td>{p.discoveries ? p.discoveries.split(",").length : 0}/3</td></tr>)}</tbody></table>
           {!students.length && <p>No students yet — share the class code.</p>}
-          <h3>📊 Metrics</h3><p>Math attempts {snap.mathAttempts} · complete {String(snap.mathComplete)}<br/>Science attempts {snap.scienceAttempts} · complete {String(snap.scienceComplete)}<br/>Heritage attempts {snap.heritageAttempts} · discoveries {snap.heritageFound.length}/3</p>
+          <h3>📊 Metrics · <Elapsed start={snap.elapsedStart} /></h3><p>Math attempts {snap.mathAttempts} · complete {String(snap.mathComplete)}<br/>Science H₂O attempts {snap.scienceAttempts} · complete {String(snap.scienceComplete)}<br/>Science CO₂ attempts {snap.science2Attempts} · complete {String(snap.science2Complete)}<br/>Heritage attempts {snap.heritageAttempts} · discoveries {snap.heritageFound.length}/3</p>
+          <h3>🎯 Common errors (auto-classified)</h3><p>➗ Fraction moves past 1 whole: <b>{snap.mathTooBig}</b><br/>🔬 Atoms in wrong/filled positions: <b>{snap.scienceBadSlot}</b><br/>🏛️ Wrong heritage answers: <b>{snap.heritageWrong}</b></p>
         </section>
         <section><h2>🎛️ Controls (server-validated)</h2>
           <div className="btnrow">{[["lobby","🏫 Send class to Campus"],["math","➗ Start Math"],["science","🔬 Start Science"],["heritage","🏛️ Start Heritage"],["summary","🏁 End → Summary"]].map(([a,l]) => <button key={a} onClick={() => cmd("setActivity", { activity: a })}>{l}</button>)}</div>
