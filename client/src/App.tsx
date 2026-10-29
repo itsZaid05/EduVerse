@@ -34,7 +34,7 @@ export default function App() {
       r.onMessage("goto", ({ activity }: any) => { /* zone follows via Student's effect below */ });
       r.onLeave(() => setConn("Disconnected — refresh to reconnect (your team's progress is kept)."));
       r.onError((_c: number, m?: string) => setError(m || "Connection error"));
-    } catch (err: any) { setError(err?.message || "Could not join. Is the server running? Check the code/PIN."); }
+    } catch (err: any) { setError(err?.message ? `Could not join: ${err.message}` : "Could not join. Is the server running? Check the code/PIN."); }
     setBusy(false);
   };
 

@@ -75,5 +75,11 @@ The Qutb Minar scene is a stylized educational reconstruction, not a survey-accu
 ## Deployment
 
 Host the client as static files (`npm run build -w client`) and the server as a persistent Node process
-(`npm run build -w server && npm start -w server`). Set `VITE_SERVER_URL` for the client build if the
-server isn't on the same host pattern, and `TEACHER_PIN` on the server. Never commit `.env`.
+(`npm run build -w server && npm start -w server`). Set `TEACHER_PIN` on the server. Never commit `.env`.
+
+**Networking note (bug fix):** the browser connects to the SAME origin it loaded the page from, using the
+`/colyseus` path prefix; Vite (dev and `preview`) proxies that prefix — HTTP matchmake and the game
+WebSocket — to the Colyseus server on `localhost:2567`. Only the client port must be publicly reachable.
+If the same-origin proxy is unavailable the client automatically falls back to the direct server endpoint
+(`<host>:2567`), and for non-Vite production hosting you can set `VITE_SERVER_URL` at build time to point
+straight at the game server (CORS is enabled server-side).
