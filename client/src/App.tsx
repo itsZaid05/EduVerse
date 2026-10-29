@@ -124,7 +124,21 @@ function Student({ room, snap, feedback, conn, nickname }: { room: Room; snap: S
         </nav>
         {feedback.map((f, i) => <p key={i} className={`fb ${f.kind}`}>{f.text}</p>)}
 
-        {zone === "campus" && <div><h2>Welcome! 🎉</h2><p>Walk to a portal or tap one above: <b>Math Lab</b> (Fraction Forge), <b>Science Lab</b> (Molecule Builder), or <b>Heritage Explorer</b> (Qutb Minar).</p><p>👥 In this session: {snap.players.filter(p=>p.connected).map((p) => p.nickname).join(", ") || "…"}</p></div>}
+        {zone === "campus" && <div className="mission">
+          <h2>Quest Board</h2>
+          <p className="obj">Choose a portal to start a mission. Team progress so far:</p>
+          <div className="questrows">
+            <div className="questrow"><span>➗ Math Lab — Fraction Forge</span><b>{snap.mathDone.length ? `${snap.mathDone.length}/2 puzzles scored` : "Not started"}</b></div>
+            <div className="questrow"><span>🔬 Science Lab — Molecule Builder</span><b>{snap.scienceComplete || snap.science2Complete ? `H₂O ${snap.scienceComplete ? "✓" : "…"} · CO₂ ${snap.science2Complete ? "✓" : "…"}` : "Not started"}</b></div>
+            <div className="questrow"><span>🏛️ Heritage Explorer — Qutb Minar</span><b>{snap.heritageFound.length ? `${snap.heritageFound.length}/3 discoveries` : "Not started"}</b></div>
+          </div>
+          <p className="meta">Team score: <b>{snap.teamScore}</b> · Activity: <b>{snap.activity === "lobby" ? "Free explore" : snap.activity}</b></p>
+          {snap.announcement ? <p className="selmsg">📣 {snap.announcement}</p> : <p className="selmsg">No active announcements. Your teacher's notices will appear here.</p>}
+          <h3>Recent updates</h3>
+          {snap.feed.length ? <div className="feed">{[...snap.feed].slice(-4).reverse().map((f: string, i: number) => <p key={i}>{f}</p>)}</div> : <p className="fine">No recent activity yet.</p>}
+          <h3>Players on campus</h3>
+          <p>{snap.players.filter((p: any) => p.connected && p.zone === "campus").map((p: any) => p.nickname).join(", ") || "Just you for now — classmates will appear here."}</p>
+        </div>}
 
         {zone === "math" && (() => { const pz = mathPz; const units = snap.mathPlaced.reduce((t: number, id: string) => t + Math.round((pieceById(id)?.value || 0) * 12), 0); const tUnits = Math.round(pz.target * 12); const gcd = (x: number, y: number): number => (y ? gcd(y, x % y) : x); const g = gcd(units, 12) || 1; const cells: (string | null)[] = Array(12).fill(null); let cur = 0; snap.mathPlaced.forEach((id: string) => { const pc = pieceById(id); if (!pc) return; for (let i = 0; i < Math.round(pc.value * 12) && cur < 12; i++) cells[cur++] = pc.color; }); const placedLabels = snap.mathPlaced.map((id: string) => pieceById(id)?.label).filter(Boolean); return <div className="mission">
           <h2>Fraction Forge</h2>

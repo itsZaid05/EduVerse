@@ -3,6 +3,7 @@ import type { Room } from "colyseus.js";
 import type { Snap } from "../network/client";
 import { HOTSPOTS } from "../games/content";
 import MathStudio from "./MathStudio";
+import Campus from "./Campus";
 
 export type Zone = "campus" | "math" | "science" | "heritage";
 const COLORS = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#9b5de5", "#f15bb5"];
@@ -39,8 +40,12 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSe
       const dx = (-Math.sin(yaw) * f + Math.cos(yaw) * r) * s;
       const dz = (-Math.cos(yaw) * f - Math.sin(yaw) * r) * s;
       if (dx || dz) {
-        pos.current.x = Math.max(-18, Math.min(18, pos.current.x + dx));
-        pos.current.z = Math.max(-18, Math.min(18, pos.current.z + dz));
+        // Campus is a bounded courtyard: portals/buildings sit beyond the
+        // walkable plaza (they are entered by click, not by walking through).
+        const bx = zone === "campus" ? 15.5 : 18;
+        const bzMin = zone === "campus" ? -6.2 : -18, bzMax = zone === "campus" ? 15 : 18;
+        pos.current.x = Math.max(-bx, Math.min(bx, pos.current.x + dx));
+        pos.current.z = Math.max(bzMin, Math.min(bzMax, pos.current.z + dz));
       }
       if (el) el.setAttribute("position", `${pos.current.x} 0 ${pos.current.z}`);
       // Smooth remote avatars: lerp each towards its latest server position.
@@ -80,25 +85,7 @@ export default function World({ room, snap, zone, onEnterZone, onHotspot, mathSe
         </a-entity>
       ))}
 
-      {zone === "campus" && (
-        <a-entity>
-          <a-plane rotation="-90 0 0" width="40" height="40" color="#8ed081" />
-          <a-circle rotation="-90 0 0" radius="4" color="#f4e9d8" position="0 0.02 0" />
-          <a-box position="-10 2 -12" width="8" height="4" depth="4" color="#ffd166" />
-          <a-box position="10 2.5 -12" width="7" height="5" depth="4" color="#ef476f" />
-          <a-box position="0 1.5 -14" width="10" height="3" depth="3" color="#118ab2" />
-          <a-text value="EDUVERSE SCHOOL" align="center" position="0 4 -13.8" color="#14324a" scale="3 3 3" />
-          <a-box position="-5 1 2" width="3" height="2" depth="0.4" color="#6a4c93" />
-          <a-text value={"QUEST BOARD\nTeam score updates here!"} align="center" position="-5 1.4 2.3" color="#fff" scale="0.9 0.9 0.9" />
-          {([["math", -9, -4, "#ef476f", "MATH LAB\nFraction Forge"], ["science", 0, -6, "#06d6a0", "SCIENCE LAB\nMolecule Builder"], ["heritage", 9, -4, "#ffb703", "HERITAGE\nQutb Minar"]] as const).map(([z, x, zz, c, label]) => (
-            <a-entity key={z} position={`${x} 0 ${zz}`}>
-              <a-box class="clickable" width="3" height="4" depth="0.6" color={c} position="0 2 0" onClick={() => onEnterZone(z as Zone)} />
-              <a-text value={label} align="center" position="0 2.2 0.4" color="#fff" scale="1.1 1.1 1.1" />
-            </a-entity>
-          ))}
-          <a-text value="Click a portal (or use the buttons) to travel" align="center" position="0 3 6" color="#14324a" scale="1.6 1.6 1.6" />
-        </a-entity>
-      )}
+      {zone === "campus" && <Campus snap={snap} onEnterZone={onEnterZone} />}
 
       {zone === "math" && <MathStudio snap={snap} selectedId={mathSelected ?? null} onSelectPiece={onSelectPiece || (() => {})} onPlaceBoard={onPlaceBoard || (() => {})} />}
 

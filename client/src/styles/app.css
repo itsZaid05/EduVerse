@@ -26,3 +26,4 @@ table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e5eef5;
 .complete{background:#e5f6ec;border:2px solid #2a9d6f;border-radius:14px;padding:.8rem;margin-top:.7rem}.complete .eq{font-size:1.15rem;font-weight:800;color:#14532d}
 button:focus-visible,input:focus-visible{outline:3px solid #e9a13b;outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.questrows{display:flex;flex-direction:column;gap:.4rem;margin:.5rem 0}.questrow{display:flex;justify-content:space-between;gap:.6rem;background:#eef4f9;border:1.5px solid #c7d7e5;border-radius:10px;padding:.5rem .6rem;font-size:.92rem}.questrow b{white-space:nowrap;color:#14532d}
